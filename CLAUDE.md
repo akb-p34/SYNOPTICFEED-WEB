@@ -3,15 +3,14 @@
 Complete rebuild. Fresh start.
 
 ## Current
-Building: Initial setup
-Tech: TBD
+Building: Landing page complete
+Tech: HTML/CSS/Node.js
 
 ## Commands
 ```bash
-# Dev (TBD)
-# npm run dev
-# npm run build
-# npm run test
+# Dev
+npm start  # Start server on localhost:3000
+npm run dev  # Same as npm start
 ```
 
 ## Principles
@@ -22,4 +21,6 @@ Tech: TBD
 
 ## Status
 ✅ Repo initialized
-⚡ Next: Define stack
+✅ Landing page built
+✅ Server ready
+⚡ Live at: localhost:3000

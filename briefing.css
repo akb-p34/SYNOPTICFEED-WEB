@@ -1,0 +1,607 @@
+/* Presentation Container */
+.presentation-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px;
+    min-height: calc(100vh - 200px);
+}
+
+.briefing-header {
+    position: relative;
+    z-index: 100;
+}
+
+/* Presentation Controls */
+.presentation-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.control-btn {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: transparent;
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 200ms;
+}
+
+.control-btn:hover {
+    background: #FFFFFF;
+    color: #000000;
+}
+
+.control-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.control-btn:disabled:hover {
+    background: transparent;
+    color: #FFFFFF;
+}
+
+.icon-btn {
+    padding: 8px 12px;
+    font-size: 18px;
+}
+
+.slide-counter {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    opacity: 0.8;
+}
+
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    margin-bottom: 32px;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: #FFFFFF;
+    transition: width 300ms ease;
+    width: 7.7%; /* 1/13 slides */
+}
+
+/* Slides */
+.slides-wrapper {
+    position: relative;
+    width: 100%;
+    height: 750px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #000000;
+}
+
+.slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transform: translateX(-100%);
+    transition: all 400ms ease;
+    padding: 40px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+}
+
+.slide.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.slide.next {
+    transform: translateX(100%);
+}
+
+.slide-content {
+    max-width: 900px;
+    width: 100%;
+    text-align: center;
+    padding-top: 40px;
+}
+
+.slide h2 {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 48px;
+    font-weight: normal;
+    line-height: 56px;
+    margin-bottom: 32px;
+}
+
+.slide-body {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+    opacity: 0.9;
+}
+
+/* Cover Slide */
+.cover-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.cover-logo {
+    margin-bottom: 48px;
+}
+
+.cover-logo img {
+    height: 64px;
+}
+
+.cover-title {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 48px;
+    font-weight: normal;
+    line-height: 56px;
+    margin-bottom: 24px;
+}
+
+.cover-subtitle {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 24px;
+    font-weight: normal;
+    opacity: 0.8;
+    margin-bottom: 64px;
+}
+
+.cover-footer {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.5;
+}
+
+/* Problem List */
+.problem-list {
+    text-align: left;
+    list-style: none;
+    margin: 40px 0;
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+}
+
+.problem-list li {
+    margin-bottom: 16px;
+    padding-left: 24px;
+    position: relative;
+}
+
+.problem-list li:before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    opacity: 0.5;
+}
+
+/* Flow Diagram */
+.flow-diagram {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: 48px 0;
+}
+
+.flow-box {
+    padding: 24px 32px;
+    border: 1px solid #FFFFFF;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.flow-arrow {
+    font-size: 24px;
+    opacity: 0.5;
+}
+
+.flow-sub {
+    font-size: 10px;
+    opacity: 0.6;
+    display: block;
+    margin-top: 4px;
+}
+
+/* Product Comparison */
+.product-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin-top: 32px;
+    text-align: left;
+}
+
+.product-column h3 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.product-column ul {
+    list-style: none;
+    margin-bottom: 24px;
+}
+
+.product-column li {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+.speed-info {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Speed List */
+.speed-list {
+    text-align: left;
+    list-style: none;
+    margin: 40px 0;
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 18px;
+    line-height: 28px;
+}
+
+.speed-list li {
+    margin-bottom: 16px;
+}
+
+/* Chart Container */
+.chart-container {
+    margin: 24px auto;
+    position: relative;
+}
+
+.chart-note {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 12px;
+    opacity: 0.6;
+    margin-top: 16px;
+}
+
+.chart-footnote {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 11px;
+    opacity: 0.5;
+    margin-top: 16px;
+    font-style: italic;
+}
+
+.target-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #B10202;
+    color: #FFFFFF;
+    padding: 4px 12px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* Competition Table */
+.competition-table {
+    width: 100%;
+    margin: 32px 0;
+    border-collapse: collapse;
+}
+
+.competition-table th {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 16px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+    text-align: left;
+}
+
+.competition-table td {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 14px;
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sub-text {
+    display: block;
+    font-size: 12px;
+    opacity: 0.6;
+    margin-top: 4px;
+}
+
+.our-edge {
+    margin-top: 32px;
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 16px;
+    padding: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Ship Grid */
+.ship-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    margin: 32px 0;
+    text-align: left;
+}
+
+.ship-section h3 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0.9;
+}
+
+.ship-section ul {
+    list-style: none;
+}
+
+.ship-section li {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    margin-bottom: 8px;
+    opacity: 0.8;
+}
+
+.code-snippet {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    margin-top: 40px;
+    font-family: monospace;
+    font-size: 16px;
+}
+
+.code-label {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 12px;
+}
+
+/* Founder Section */
+.founder-section {
+    margin: 24px 0;
+}
+
+.founder-section h3 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0.9;
+}
+
+.founder-credentials {
+    display: grid;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.credential-block {
+    text-align: left;
+    padding: 16px;
+    border-left: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.credential-block h4 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.8;
+}
+
+.credential-block p {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    opacity: 0.8;
+}
+
+/* Pricing Tiers */
+.pricing-tiers {
+    margin: 40px 0;
+}
+
+.tier {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 18px;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    line-height: 28px;
+}
+
+/* Timeline */
+.timeline-section {
+    text-align: left;
+    margin: 32px 0;
+}
+
+.timeline-section h3 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.timeline-section p {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    margin-bottom: 24px;
+    opacity: 0.8;
+}
+
+/* Funding */
+.funding-main {
+    margin-bottom: 24px;
+}
+
+.funding-highlight {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 24px;
+    line-height: 32px;
+    margin-bottom: 16px;
+}
+
+.next-raise-container {
+    margin-top: 40px;
+}
+
+.next-raise {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    opacity: 0.8;
+    display: block;
+}
+
+/* Closing Slide */
+.closing-slide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+.team-description {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 18px;
+    margin-bottom: 48px;
+    opacity: 0.9;
+}
+
+.cta-container {
+    margin: 48px 0;
+}
+
+.closing-cta {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 32px;
+    line-height: 40px;
+}
+
+.contact-section {
+    margin-top: 48px;
+}
+
+/* Fullscreen */
+.presentation-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100%;
+    padding: 0;
+    z-index: 9999;
+    background: #000000;
+}
+
+.presentation-container.fullscreen .slides-wrapper {
+    height: calc(100vh - 100px);
+}
+
+.presentation-container.fullscreen .briefing-header {
+    display: none;
+}
+
+.presentation-container.fullscreen .slide {
+    padding: 20px;
+}
+
+.presentation-container.fullscreen .slide h2 {
+    font-size: 42px;
+    line-height: 48px;
+    margin-bottom: 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .slide h2 {
+        font-size: 28px;
+        line-height: 36px;
+    }
+
+    .flow-diagram {
+        flex-direction: column;
+    }
+
+    .flow-arrow {
+        transform: rotate(90deg);
+    }
+
+    .product-comparison,
+    .ship-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .slides-wrapper {
+        height: 500px;
+    }
+}
