@@ -5,9 +5,13 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "echo 'No build step required'"
   },
   "keywords": ["weather", "trading", "real-time"],
   "author": "Akbar Pathan",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=14.0.0"
+  }
 }
