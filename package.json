@@ -2,16 +2,10 @@
   "name": "synopticfeed-web",
   "version": "2.0.0",
   "description": "SYNOPTICFEED - From Sky to Signal in Seconds",
-  "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
-    "build": "echo 'No build step required'"
+    "dev": "node server.js"
   },
   "keywords": ["weather", "trading", "real-time"],
   "author": "Akbar Pathan",
-  "license": "UNLICENSED",
-  "engines": {
-    "node": ">=14.0.0"
-  }
+  "license": "UNLICENSED"
 }
