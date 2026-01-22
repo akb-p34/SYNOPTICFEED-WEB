@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYNOPTICFEED - From Sky to Signal in Seconds</title>
+    <title>SYNOPTICFEED - Decision-support for NJ Emergency Management</title>
+    <meta name="description" content="Turning official NWS alerts into NJ-localized impact triage and EOC-ready operational briefs.">
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -14,8 +15,7 @@
                 <img src="assets/WhiteHorizontalLogo.svg" alt="SYNOPTICFEED">
             </a>
             <div class="nav-links">
-                <a href="https://forms.gle/x6LhpMtobNFw3t6fA" target="_blank">DEMO</a>
-                <a href="briefing.html">TECHNICAL BRIEFING</a>
+                <button onclick="copyEmail()" class="nav-contact">CONTACT FOUNDER</button>
             </div>
         </nav>
     </header>
@@ -24,64 +24,50 @@
         <section class="hero">
             <div class="hero-logo crt-boot" style="animation-delay: 100ms">
                 <img src="assets/WhiteHorizontalLogo.svg" alt="SYNOPTICFEED">
+                <span class="version-badge">3.1</span>
             </div>
-            <h1 class="crt-boot" style="animation-delay: 200ms">Beat the storm. Beat the market.</h1>
-            <p class="tagline crt-boot" style="animation-delay: 300ms">From space to signal in seconds</p>
-            <div class="cta-buttons crt-boot" style="animation-delay: 400ms">
-                <a href="https://forms.gle/x6LhpMtobNFw3t6fA" target="_blank" class="btn-primary">REQUEST CLEARANCE</a>
-                <button onclick="copyEmail()" class="btn-secondary">CONTACT FOUNDER</button>
-            </div>
-        </section>
-
-        <section class="capabilities">
-            <div class="capability-block crt-boot" style="animation-delay: 500ms">
-                <h3>REAL-TIME WEATHER RAIL</h3>
-                <p>Defense-grade satellite and radar intercepts. Direct ingest from GOES GRB, NEXRAD, and model outputs.</p>
-            </div>
-            <div class="capability-block crt-boot" style="animation-delay: 600ms">
-                <h3>TRADABLE SIGNALS</h3>
-                <p>Numeric deltas, not forecasts. HDD/CDD shocks, lightning bursts, radar onset. What changed, when it changed.</p>
-            </div>
-            <div class="capability-block crt-boot" style="animation-delay: 700ms">
-                <h3>DETERMINISTIC LATENCY</h3>
-                <p>Satellite features: p50 ≤ 90s. Model deltas: ≤ 60s from publish. Every event timestamped with provenance.</p>
+            <h1 class="crt-boot" style="animation-delay: 200ms">Decision-support for New Jersey emergency management</h1>
+            <p class="tagline crt-boot" style="animation-delay: 300ms">Turning official NWS alerts into NJ-localized impact triage and EOC-ready operational briefs.</p>
+            <div class="status-badges crt-boot" style="animation-delay: 400ms">
+                <span class="badge badge-challenge">NJ AI Innovation Challenge</span>
+                <span class="badge badge-status">In Development</span>
             </div>
         </section>
 
-        <section class="status-strip crt-boot" style="animation-delay: 800ms">
-            <span>LATENCY p50 90s</span>
-            <span class="separator">·</span>
-            <span>p95 170s</span>
-            <span class="separator">·</span>
-            <span>UPTIME 99.95%</span>
+        <section class="video-section crt-boot" style="animation-delay: 500ms">
+            <div class="video-container">
+                <iframe
+                    src="https://www.youtube.com/embed/qBMv9x6IcDM"
+                    title="SynopticFeed Demo"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowfullscreen>
+                </iframe>
+            </div>
+        </section>
+
+        <section class="deck-section crt-boot" style="animation-delay: 600ms">
+            <p class="deck-description">Learn more about our approach, technology, and roadmap.</p>
+            <a href="assets/SynopticFeed-3.1-Deck.pdf" target="_blank" class="btn-primary">VIEW PITCH DECK</a>
         </section>
     </main>
 
-    <footer class="crt-boot" style="animation-delay: 900ms">
+    <footer class="crt-boot" style="animation-delay: 700ms">
         <div class="footer-content">
             <div class="footer-section">
                 <h4>SYNOPTICFEED</h4>
-                <p>From space to signal in seconds</p>
-                <p class="footer-tagline">Defense-grade weather intelligence</p>
+                <p>AI-powered decision artifacts for NJ county emergency operations.</p>
+                <p class="footer-tagline">Version 3.1 - In Development</p>
             </div>
             <div class="footer-section">
-                <h4>ACCESS</h4>
+                <h4>CONTACT</h4>
                 <ul>
-                    <li><a href="https://forms.gle/x6LhpMtobNFw3t6fA" target="_blank">Request Demo</a></li>
-                    <li><a href="briefing.html">Technical Briefing</a></li>
                     <li><a href="#" onclick="copyEmail(); return false;">Contact Founder</a></li>
                 </ul>
             </div>
-            <div class="footer-section">
-                <h4>STATUS</h4>
-                <p>System Operational</p>
-                <p>Uptime: 99.95%</p>
-                <p>Version: 2.0.0</p>
-            </div>
         </div>
         <div class="footer-bottom">
-            <p class="footnote">Authorized public broadcasts and licensed feeds. Signals are not financial advice.</p>
-            <p class="classification">RESTRICTED // INVESTOR BRIEF // © 2025 SYNOPTICFEED</p>
+            <p class="classification">NJ AI INNOVATION CHALLENGE // 2026 SYNOPTICFEED</p>
         </div>
     </footer>
 
