@@ -185,13 +185,36 @@ h1 {
 }
 
 .badge-challenge {
-    color: #FF7800;
-    border-color: #FF7800;
-}
-
-.badge-status {
     color: rgba(255, 255, 255, 0.6);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hero CTA Button */
+.hero-cta {
+    margin-bottom: 24px;
+}
+
+.btn-deck {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 16px 32px;
+    border: 1px solid #FF7800;
+    transition: all 200ms;
+    display: inline-block;
+    cursor: pointer;
+    background-color: #FF7800;
+    color: #000000;
+    min-width: 180px;
+    text-align: center;
+}
+
+.btn-deck:hover {
+    background-color: transparent;
+    color: #FF7800;
 }
 
 /* Video Section */
@@ -200,59 +223,16 @@ h1 {
 }
 
 .video-container {
-    position: relative;
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio */
-    height: 0;
-    overflow: hidden;
+    aspect-ratio: 16 / 9;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .video-container iframe {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
-}
-
-/* Deck Section */
-.deck-section {
-    text-align: center;
-    padding: 48px 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.deck-description {
-    font-family: "Times New Roman", Times, serif;
-    font-size: 18px;
-    opacity: 0.7;
-    margin-bottom: 24px;
-}
-
-.btn-primary {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-weight: bold;
-    font-size: 14px;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    text-decoration: none;
-    padding: 16px 32px;
-    border: 1px solid #FFFFFF;
-    transition: all 200ms;
-    display: inline-block;
-    cursor: pointer;
-    background-color: #FFFFFF;
-    color: #000000;
-    min-width: 180px;
-    text-align: center;
-}
-
-.btn-primary:hover {
-    background-color: #000000;
-    color: #FFFFFF;
 }
 
 footer {
