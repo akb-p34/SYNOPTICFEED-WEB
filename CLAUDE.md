@@ -1,17 +1,6 @@
-# SYNOPTICFEED v2.0
+# SYNOPTICFEED-WEB
 
 Complete rebuild. Fresh start.
-
-## Current
-Building: Landing page complete
-Tech: HTML/CSS/Node.js
-
-## Commands
-```bash
-# Dev
-npm start  # Start server on localhost:3000
-npm run dev  # Same as npm start
-```
 
 ## Principles
 - Simplify everything
@@ -19,8 +8,6 @@ npm run dev  # Same as npm start
 - Minimal dependencies
 - Clean, direct code
 
-## Status
-✅ Repo initialized
-✅ Landing page built
-✅ Server ready
-⚡ Live at: localhost:3000
+## Agent Feedback Loop
+
+If you encounter something surprising or confusing in this project — unexpected patterns, unclear naming, confusing structure — note it and suggest updating this CLAUDE.md. Don't auto-update the file. The developer will evaluate whether to fix the codebase itself (preferred) or add a note here.
