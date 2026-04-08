@@ -1,3 +1,19 @@
+@font-face {
+    font-family: "Alliance No.2";
+    src: url("assets/fonts/AllianceNo2-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Alliance No.2";
+    src: url("assets/fonts/AllianceNo2-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -327,7 +343,7 @@ footer {
 
 .footnote {
     font-size: 12px;
-    opacity: 0.4;
+    opacity: 0.55;
     margin-bottom: 16px;
 }
 
@@ -337,7 +353,7 @@ footer {
     font-weight: bold;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    opacity: 0.3;
+    opacity: 0.45;
 }
 
 .toast {
@@ -390,7 +406,7 @@ footer {
     font-weight: bold;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.25;
+    opacity: 0.45;
     margin-bottom: 48px;
 }
 
@@ -669,7 +685,7 @@ footer {
     font-size: 10px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    opacity: 0.35;
+    opacity: 0.45;
 }
 
 .dashboard-footer strong {
@@ -888,13 +904,51 @@ footer {
     text-align: center;
     padding: 24px 0 0;
     color: rgba(255, 255, 255, 0.3);
-    animation: chevronBounce 2s ease-in-out infinite;
+    opacity: 0;
+    animation: crtBoot 0.3s ease-out 1.2s forwards, chevronBounce 2s ease-in-out 1.5s infinite;
     transition: opacity 0.4s ease;
 }
 
 .scroll-chevron.hidden {
     opacity: 0;
     pointer-events: none;
+    animation: none;
+}
+
+/* ========================================
+   FOCUS STYLES
+   ======================================== */
+
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid #FFFFFF;
+    outline-offset: 3px;
+}
+
+/* ========================================
+   REDUCED MOTION
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+    .crt-boot {
+        animation: none;
+        opacity: 1;
+    }
+    body::before {
+        animation: none;
+    }
+    .scroll-chevron {
+        animation: none;
+        opacity: 0.3;
+    }
+    .status-active {
+        animation: none;
+    }
 }
 
 @media (max-width: 768px) {

@@ -104,12 +104,12 @@
     }
 
     function updateDashboardClock() {
-        var now = new Date();
-        var h = String(now.getHours()).padStart(2, '0');
-        var m = String(now.getMinutes()).padStart(2, '0');
-        var s = String(now.getSeconds()).padStart(2, '0');
         var el = document.getElementById('dashboardTime');
-        if (el) el.textContent = h + ':' + m + ':' + s + ' ET';
+        if (!el) return;
+        el.textContent = new Date().toLocaleTimeString('en-US', {
+            timeZone: 'America/New_York',
+            hour12: false
+        }) + ' ET';
     }
 
     function runAlertCycle() {
@@ -143,7 +143,7 @@
         setTimeout(function () {
             alertPanel.classList.add('active');
 
-            var message = 'Forecast divergence detected — PJM Western Hub. Temperature delta +8.2°F from GFS prediction. Day-ahead contracts exposed. Confidence: HIGH.';
+            var message = 'Forecast divergence detected. PJM Western Hub. Temperature delta +8.2\u00B0F from GFS prediction. Day-ahead contracts exposed. Confidence: HIGH.';
             typeText(alertText, message, 25);
         }, 3500);
 
