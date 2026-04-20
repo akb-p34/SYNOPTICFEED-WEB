@@ -68,6 +68,25 @@ module.exports = async function handler(req, res) {
 
     const sb = getClient();
 
+    // Guarantee FK: if a visitor_id was sent but no row exists, create a minimal visitor
+    // so the lead insert doesn't fail (e.g., tracker.js was blocked or hasn't fired yet).
+    if (lead.visitor_id) {
+        const { data: existing } = await sb
+            .from('visitors')
+            .select('visitor_id')
+            .eq('visitor_id', lead.visitor_id)
+            .maybeSingle();
+        if (!existing) {
+            const ua = clean(req.headers['user-agent'], 500);
+            const country = clean(req.headers['x-vercel-ip-country'], 4);
+            await sb.from('visitors').insert({
+                visitor_id: lead.visitor_id,
+                user_agent: ua,
+                country
+            });
+        }
+    }
+
     const { data: leadRow, error: upsertError } = await sb
         .from('leads')
         .upsert(lead, { onConflict: 'email' })
