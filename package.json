@@ -1,12 +1,20 @@
 {
   "name": "synopticfeed-web",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "SYNOPTICFEED - Satellite verification for power trading desks",
   "scripts": {
     "build": "node build.js",
-    "dev": "node build.js && node server.js"
+    "dev": "node build.js && node server.js",
+    "dev:api": "node build.js && vercel dev"
   },
   "keywords": ["weather", "trading", "real-time"],
   "author": "Akbar Pathan",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "resend": "^4.0.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5"
+  }
 }

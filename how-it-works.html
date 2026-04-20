@@ -22,7 +22,8 @@
         <div class="nav-links">
             <a href="/how-it-works" class="nav-contact" data-nav="/how-it-works">HOW IT WORKS</a>
             <a href="/pricing" class="nav-contact" data-nav="/pricing">PRICING</a>
-            <a href="https://forms.gle/xKpWRHwwUgGC9CyK9" target="_blank" rel="noopener noreferrer" class="nav-contact">GET ALPHA ACCESS</a>
+            <a href="/demo/" class="nav-contact" data-nav="/demo/">DEMO</a>
+            <a href="#" data-popup-trigger="nav" class="nav-contact">GET FOUNDING ACCESS</a>
         </div>
     </nav>
 </header>
@@ -162,7 +163,7 @@
         <section class="subpage-cta">
             <h2>Catch the next forecast break, first.</h2>
             <div class="cta-buttons">
-                <a href="https://forms.gle/xKpWRHwwUgGC9CyK9" target="_blank" rel="noopener noreferrer" class="btn-primary">GET ALPHA ACCESS</a>
+                <a href="#" data-popup-trigger="how-it-works-cta" class="btn-primary">GET FOUNDING ACCESS</a>
             </div>
         </section>
     </main>
@@ -186,9 +187,9 @@
         <div class="footer-section">
             <h4>ACCESS</h4>
             <ul>
-                <li><a href="https://forms.gle/xKpWRHwwUgGC9CyK9" target="_blank" rel="noopener noreferrer">Get Alpha Access</a></li>
+                <li><a href="#" data-popup-trigger="footer-access">Get Founding Access</a></li>
                 <li><a href="https://www.linkedin.com/company/synopticfeed/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-                <li><a href="#" onclick="copyEmail(); return false;">Contact Us</a></li>
+                <li><a href="#" data-popup-trigger="footer-contact">Contact Us</a></li>
             </ul>
         </div>
     </div>
@@ -198,20 +199,56 @@
     </div>
 </footer>
 
-<div id="toast" class="toast">Email copied to clipboard</div>
+<div id="syf-popup" class="syf-popup" aria-hidden="true" role="dialog" aria-labelledby="syf-popup-title" aria-modal="true">
+    <div class="syf-popup-backdrop" data-popup-close></div>
+    <div class="syf-popup-panel">
+        <button class="syf-popup-close" type="button" aria-label="Close" data-popup-close>&times;</button>
+        <div class="syf-popup-tag">FOUNDING PARTNER PROGRAM</div>
+        <h2 id="syf-popup-title" class="syf-popup-title">Limited to ten desks.</h2>
+        <p class="syf-popup-copy">Founding partners get first access to the satellite verification feed, locked pricing for the lifetime of your seat, and direct input on what we build next. Hardware ships this quarter.</p>
+
+        <form id="syf-popup-form" class="syf-popup-form" novalidate>
+            <label class="syf-popup-field">
+                <span>Name</span>
+                <input type="text" name="name" required autocomplete="name" maxlength="120">
+            </label>
+            <label class="syf-popup-field">
+                <span>Work email</span>
+                <input type="email" name="email" required autocomplete="email" maxlength="254">
+            </label>
+            <label class="syf-popup-field">
+                <span>Company</span>
+                <input type="text" name="company" required autocomplete="organization" maxlength="160">
+            </label>
+            <div class="syf-popup-hp" aria-hidden="true">
+                <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+            <button type="submit" class="syf-popup-submit">REQUEST ACCESS</button>
+            <p class="syf-popup-foot">No newsletter. No spam. We reply personally.</p>
+            <p class="syf-popup-error" role="alert"></p>
+        </form>
+
+        <div class="syf-popup-success" hidden>
+            <div class="syf-popup-tag">REQUEST RECEIVED</div>
+            <h2 class="syf-popup-title">Check your inbox.</h2>
+            <p class="syf-popup-copy">Akbar will reply personally within one business day.</p>
+            <button type="button" class="syf-popup-submit" data-popup-close>CLOSE</button>
+        </div>
+    </div>
+</div>
+<div id="syf-cookie-banner" class="syf-cookie-banner" hidden>
+    <p class="syf-cookie-text">We use first-party cookies to understand what brings traders to SynopticFeed. No third-party trackers.</p>
+    <div class="syf-cookie-actions">
+        <button type="button" class="syf-cookie-btn syf-cookie-ok" data-cookie-accept>OK</button>
+        <button type="button" class="syf-cookie-btn syf-cookie-decline" data-cookie-decline>Decline</button>
+    </div>
+</div>
 
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 <script src="animations.js" defer></script>
-
-<script>
-    function copyEmail() {
-        window.open('https://forms.gle/xKpWRHwwUgGC9CyK9', '_blank', 'noopener,noreferrer');
-    }
-    function trackExclusiveInquiry() {
-        document.cookie = "syf_exclusive_inquiry=1; max-age=31536000; path=/; samesite=lax";
-        window.open('https://forms.gle/xKpWRHwwUgGC9CyK9', '_blank', 'noopener,noreferrer');
-    }
-</script>
+<script src="tracker.js" defer></script>
+<script src="popup.js" defer></script>
+<script src="cookie-banner.js" defer></script>
 </body>
 </html>

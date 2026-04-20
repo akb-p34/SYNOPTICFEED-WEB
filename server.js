@@ -43,15 +43,22 @@ const server = http.createServer((req, res) => {
         filePath = './index.html';
     }
 
-    // cleanUrls parity with Vercel: if path has no extension and file doesn't exist, try .html
+    // cleanUrls parity with Vercel: if path has no extension, try dir/index.html, then path.html
     if (!path.extname(filePath)) {
+        const indexPath = filePath.replace(/\/$/, '') + '/index.html';
         const htmlPath = filePath.replace(/\/$/, '') + '.html';
-        fs.access(htmlPath, fs.constants.F_OK, (err) => {
-            if (!err) {
-                serveFile(htmlPath, res);
-            } else {
-                serveFile(filePath, res);
+        fs.access(indexPath, fs.constants.F_OK, (indexErr) => {
+            if (!indexErr) {
+                serveFile(indexPath, res);
+                return;
             }
+            fs.access(htmlPath, fs.constants.F_OK, (htmlErr) => {
+                if (!htmlErr) {
+                    serveFile(htmlPath, res);
+                } else {
+                    serveFile(filePath, res);
+                }
+            });
         });
         return;
     }

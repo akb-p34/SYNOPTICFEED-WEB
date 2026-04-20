@@ -1787,3 +1787,265 @@ main:has(.subpage-hero) {
         line-height: 32px;
     }
 }
+
+/* ============================================================
+   Popup (founding partner lead capture)
+   ============================================================ */
+
+.syf-popup {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.syf-popup.is-open {
+    display: flex;
+    animation: syfFadeIn 0.2s ease-out;
+}
+
+.syf-popup-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.syf-popup-panel {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 120, 0, 0.4);
+    padding: 40px 36px 32px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 120, 0, 0.12);
+}
+
+.syf-popup-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.15s ease;
+}
+
+.syf-popup-close:hover { color: #FF7800; }
+
+.syf-popup-tag {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #FF7800;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+.syf-popup-title {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 1.15;
+    color: #FFFFFF;
+    margin-bottom: 14px;
+}
+
+.syf-popup-copy {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 24px;
+}
+
+.syf-popup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.syf-popup-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.syf-popup-field span {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+}
+
+.syf-popup-field input {
+    font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
+    font-size: 15px;
+    color: #FFFFFF;
+    background: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.syf-popup-field input:focus {
+    border-color: #FF7800;
+}
+
+.syf-popup-hp {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.syf-popup-submit {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #000000;
+    background: #FF7800;
+    border: 1px solid #FF7800;
+    padding: 14px 20px;
+    margin-top: 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.syf-popup-submit:hover:not(:disabled) {
+    background: transparent;
+    color: #FF7800;
+}
+
+.syf-popup-submit:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.syf-popup-foot {
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 4px;
+    text-align: center;
+}
+
+.syf-popup-error {
+    display: none;
+    font-size: 12px;
+    color: #FF7800;
+    margin-top: 4px;
+}
+
+body.syf-popup-open {
+    overflow: hidden;
+}
+
+@keyframes syfFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ============================================================
+   Cookie consent banner
+   ============================================================ */
+
+.syf-cookie-banner {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    z-index: 9000;
+    background: #0a0a0a;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.syf-cookie-banner.is-visible {
+    animation: syfFadeIn 0.25s ease-out;
+}
+
+.syf-cookie-text {
+    font-size: 13px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.75);
+    margin: 0;
+    flex: 1;
+}
+
+.syf-cookie-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.syf-cookie-btn {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 8px 16px;
+    border: 1px solid;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.syf-cookie-ok {
+    background: #FF7800;
+    border-color: #FF7800;
+    color: #000000;
+}
+.syf-cookie-ok:hover {
+    background: transparent;
+    color: #FF7800;
+}
+
+.syf-cookie-decline {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+}
+.syf-cookie-decline:hover {
+    border-color: #FFFFFF;
+    color: #FFFFFF;
+}
+
+@media (max-width: 600px) {
+    .syf-popup-panel {
+        padding: 32px 24px 24px;
+    }
+    .syf-popup-title {
+        font-size: 24px;
+    }
+    .syf-cookie-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .syf-cookie-actions {
+        justify-content: flex-end;
+    }
+}

@@ -17,9 +17,9 @@
         <div class="footer-section">
             <h4>ACCESS</h4>
             <ul>
-                <li><a href="https://forms.gle/xKpWRHwwUgGC9CyK9" target="_blank" rel="noopener noreferrer">Get Alpha Access</a></li>
+                <li><a href="#" data-popup-trigger="footer-access">Get Founding Access</a></li>
                 <li><a href="https://www.linkedin.com/company/synopticfeed/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
-                <li><a href="#" onclick="copyEmail(); return false;">Contact Us</a></li>
+                <li><a href="#" data-popup-trigger="footer-contact">Contact Us</a></li>
             </ul>
         </div>
     </div>
@@ -29,18 +29,12 @@
     </div>
 </footer>
 
-<div id="toast" class="toast">Email copied to clipboard</div>
+{{POPUP}}
+{{COOKIE_BANNER}}
 
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
 <script src="animations.js" defer></script>
-
-<script>
-    function copyEmail() {
-        window.open('https://forms.gle/xKpWRHwwUgGC9CyK9', '_blank', 'noopener,noreferrer');
-    }
-    function trackExclusiveInquiry() {
-        document.cookie = "syf_exclusive_inquiry=1; max-age=31536000; path=/; samesite=lax";
-        window.open('https://forms.gle/xKpWRHwwUgGC9CyK9', '_blank', 'noopener,noreferrer');
-    }
-</script>
+<script src="tracker.js" defer></script>
+<script src="popup.js" defer></script>
+<script src="cookie-banner.js" defer></script>
