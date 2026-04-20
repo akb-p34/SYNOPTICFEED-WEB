@@ -1974,7 +1974,7 @@ body.syf-popup-open {
     background: #0a0a0a;
     border: 1px solid rgba(255, 255, 255, 0.12);
     padding: 16px 20px;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
@@ -1984,6 +1984,7 @@ body.syf-popup-open {
 }
 
 .syf-cookie-banner.is-visible {
+    display: flex;
     animation: syfFadeIn 0.25s ease-out;
 }
 

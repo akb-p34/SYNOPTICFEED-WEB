@@ -130,6 +130,27 @@
         if (e.key === 'Escape' && isOpen) closePopup();
     }
 
+    function trackClick(context) {
+        try {
+            var body = JSON.stringify({
+                visitor_id: getCookie('syf_visitor_id') || null,
+                cta_context: context,
+                page_path: currentPath()
+            });
+            if (navigator.sendBeacon) {
+                var blob = new Blob([body], { type: 'application/json' });
+                navigator.sendBeacon('/api/track-click', blob);
+                return;
+            }
+            fetch('/api/track-click', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: body,
+                keepalive: true
+            }).catch(function () { /* silent */ });
+        } catch (_) { /* silent */ }
+    }
+
     function wireTriggers() {
         if (triggerSetup) return;
         triggerSetup = true;
@@ -137,7 +158,9 @@
             var t = e.target.closest('[data-popup-trigger]');
             if (t) {
                 e.preventDefault();
-                openPopup(t.getAttribute('data-popup-trigger') || 'click');
+                var context = t.getAttribute('data-popup-trigger') || 'click';
+                trackClick(context);
+                openPopup(context);
                 return;
             }
             var c = e.target.closest('[data-popup-close]');

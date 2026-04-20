@@ -17,7 +17,7 @@
         if (getCookie(CONSENT_COOKIE)) return;
         var el = document.getElementById('syf-cookie-banner');
         if (!el) return;
-        el.hidden = false;
+        el.removeAttribute('hidden');
         el.classList.add('is-visible');
 
         el.addEventListener('click', function (e) {
@@ -26,7 +26,6 @@
             if (!ok && !decline) return;
             setCookie(CONSENT_COOKIE, ok ? 'accepted' : 'declined', 365);
             el.classList.remove('is-visible');
-            el.hidden = true;
         });
     }
 
