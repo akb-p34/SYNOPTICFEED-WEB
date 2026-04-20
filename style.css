@@ -1873,6 +1873,20 @@ main:has(.subpage-hero) {
     gap: 12px;
 }
 
+.syf-popup-form[hidden] {
+    display: none;
+}
+
+.syf-popup-success {
+    text-align: center;
+}
+
+.syf-popup-success .syf-popup-submit {
+    display: block;
+    margin: 24px auto 0;
+    min-width: 180px;
+}
+
 .syf-popup-field {
     display: flex;
     flex-direction: column;

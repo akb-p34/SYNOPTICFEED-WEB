@@ -113,8 +113,10 @@ module.exports = async function handler(req, res) {
         };
     }
 
-    // Fire-and-forget: email failures should not block the user-facing success response
-    Promise.all([
+    // Must await: Vercel serverless freezes the function after res.json(),
+    // so fire-and-forget sends get killed mid-flight and never reach Resend.
+    // Fail-soft on errors so the user still gets a success response.
+    await Promise.all([
         sendWelcome(leadRow).catch(err => console.error('welcome email error', err)),
         sendNotification(leadRow, context).catch(err => console.error('notify email error', err))
     ]);
