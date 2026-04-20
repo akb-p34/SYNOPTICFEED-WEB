@@ -64,23 +64,7 @@ body {
     opacity: 0;
 }
 
-/* Scanline effect */
-body::before {
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(to bottom,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent);
-    animation: scanline 3s linear infinite;
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.5;
-}
+/* Scanline effect removed per 2026-04-20 feedback (was causing visual fatigue) */
 
 header {
     padding: 32px 0;
@@ -108,6 +92,7 @@ nav {
 .nav-links {
     display: flex;
     gap: 32px;
+    align-items: center;
 }
 
 .nav-contact {
@@ -116,18 +101,30 @@ nav {
     font-weight: bold;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #FFFFFF;
+    color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
     background: none;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 8px 16px;
+    border: none;
+    padding: 4px 0;
     cursor: pointer;
-    transition: all 200ms;
+    transition: color 200ms;
 }
 
-.nav-contact:hover {
-    background: #FFFFFF;
+.nav-contact:hover,
+.nav-contact.active {
+    color: #FF7800;
+}
+
+.nav-links .nav-contact:last-child {
+    padding: 8px 16px;
+    border: 1px solid #FF7800;
+    background: #FF7800;
     color: #000000;
+}
+
+.nav-links .nav-contact:last-child:hover {
+    background: transparent;
+    color: #FF7800;
 }
 
 main {
@@ -236,6 +233,37 @@ h1 {
     grid-template-columns: repeat(3, 1fr);
     gap: 48px;
     margin-bottom: 64px;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.capability-block {
+    position: relative;
+    padding: 16px;
+    --mx: 50%;
+    --my: 50%;
+    transition: transform 300ms ease;
+}
+
+.capability-block::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(280px circle at var(--mx) var(--my), rgba(255, 120, 0, 0.1), transparent 50%);
+    opacity: 0;
+    transition: opacity 300ms ease;
+    z-index: 0;
+}
+
+.capability-block:hover::after {
+    opacity: 1;
+}
+
+.capability-block > * {
+    position: relative;
+    z-index: 1;
 }
 
 .capability-block h3 {
@@ -251,13 +279,62 @@ h1 {
 .capability-block p {
     font-size: 14px;
     line-height: 22px;
-    opacity: 0.7;
+    opacity: 0.75;
+}
+
+@keyframes gentle-breath {
+    0%, 100% { opacity: 0.88; }
+    50% { opacity: 1; }
+}
+
+@keyframes amber-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 120, 0, 0); }
+    50% { box-shadow: 0 0 40px rgba(255, 120, 0, 0.18); }
+}
+
+/* Sovereign badge breathes only AFTER the fade-in completes, otherwise the
+   keyframe animation overrides the opacity transition and the badge never fades. */
+.pricing-tier.sovereign.corners-open .tier-badge {
+    animation: gentle-breath 4.5s ease-in-out infinite;
+    animation-delay: 3500ms;
+}
+
+.pricing-tier.featured {
+    animation: amber-pulse 6s ease-in-out infinite;
+}
+
+.illustrative-tag {
+    animation: gentle-breath 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pricing-tier.sovereign .tier-badge,
+    .pricing-tier.featured,
+    .illustrative-tag {
+        animation: none;
+    }
+
+    .corner-bracket,
+    .pricing-tier.sovereign::before,
+    .pricing-tier.sovereign > *:not(.corner-bracket) {
+        transition: none;
+    }
+
+    .pricing-tier.sovereign::before {
+        transform: scale(1);
+    }
+
+    .pricing-tier.sovereign > *:not(.corner-bracket) {
+        opacity: 1;
+    }
 }
 
 /* Status Strip */
 .status-strip {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
+    align-items: center;
     gap: 16px;
     padding: 16px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -268,6 +345,7 @@ h1 {
     letter-spacing: 0.08em;
     text-transform: uppercase;
     opacity: 0.6;
+    line-height: 1;
 }
 
 .status-strip .separator {
@@ -285,9 +363,38 @@ footer {
     margin: 0 auto;
     padding: 0 32px;
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 2fr 1fr 1fr;
     gap: 64px;
     margin-bottom: 64px;
+    align-items: start;
+}
+
+.footer-brand .footer-logo {
+    display: block;
+    margin-bottom: 16px;
+}
+
+.footer-brand .footer-logo img {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+
+.footer-brand-tag {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    max-width: 320px;
+    letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
 }
 
 .footer-section h4 {
@@ -401,13 +508,16 @@ footer {
    ======================================== */
 
 .section-stamp {
+    display: block;
+    width: 100%;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 10px;
     font-weight: bold;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    opacity: 0.45;
-    margin-bottom: 48px;
+    opacity: 0.55;
+    margin: 0 auto 48px;
+    text-align: center;
 }
 
 /* ========================================
@@ -547,9 +657,9 @@ footer {
 }
 
 .dashboard-mock {
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     background: rgba(255, 255, 255, 0.02);
-    max-width: 800px;
+    max-width: 1040px;
     margin: 0 auto 32px;
     overflow: hidden;
 }
@@ -558,45 +668,45 @@ footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 20px 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dashboard-title {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: bold;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    opacity: 0.5;
+    opacity: 0.75;
 }
 
 .dashboard-time {
     font-family: "Alliance No.2", "IBM Plex Sans", Inter, system-ui, sans-serif;
-    font-size: 12px;
-    opacity: 0.4;
+    font-size: 14px;
+    opacity: 0.7;
     font-variant-numeric: tabular-nums;
 }
 
 .dashboard-zones {
-    padding: 16px 24px;
+    padding: 24px 32px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 16px;
 }
 
 .zone {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 14px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: border-color 0.6s ease, background 0.6s ease;
 }
 
 .zone-name {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: bold;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -605,7 +715,7 @@ footer {
 
 .zone-status {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: bold;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -678,26 +788,25 @@ footer {
 .dashboard-footer {
     display: flex;
     gap: 24px;
-    padding: 12px 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 16px 32px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    opacity: 0.45;
+    opacity: 0.9;
 }
 
 .dashboard-footer strong {
-    opacity: 1;
     color: #FF7800;
 }
 
 .dashboard-caption {
     font-family: "Times New Roman", Times, serif;
-    font-size: 18px;
+    font-size: 20px;
     text-align: center;
-    opacity: 0.5;
-    max-width: 600px;
+    opacity: 0.9;
+    max-width: 720px;
     margin: 0 auto;
 }
 
@@ -838,6 +947,11 @@ footer {
 }
 
 .insurance-cta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 32px;
+    width: 100%;
     text-align: center;
 }
 
@@ -925,6 +1039,41 @@ button:focus-visible {
 }
 
 /* ========================================
+   MOBILE HEADER
+   ======================================== */
+
+@media (max-width: 720px) {
+    header {
+        padding: 20px 0;
+    }
+    nav {
+        padding: 0 16px;
+    }
+    .logo img {
+        height: 24px;
+    }
+    .nav-links {
+        gap: 16px;
+    }
+    .nav-contact {
+        font-size: 11px;
+        letter-spacing: 0.06em;
+    }
+    .nav-links .nav-contact:last-child {
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 520px) {
+    .nav-links .nav-contact[data-nav] {
+        display: none;
+    }
+    .logo img {
+        height: 22px;
+    }
+}
+
+/* ========================================
    REDUCED MOTION
    ======================================== */
 
@@ -981,13 +1130,7 @@ button:focus-visible {
     }
 
     .status-strip {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .status-strip .separator {
-        display: none;
+        gap: 10px;
     }
 
     .footer-content {
@@ -1064,6 +1207,583 @@ button:focus-visible {
 
     .validation-quote p {
         font-size: 22px;
+        line-height: 32px;
+    }
+}
+
+/* ============================================
+   SUBPAGE HERO (used on /pricing and /how-it-works)
+   Matches existing design system: Times New Roman headlines, Helvetica Neue nav/body
+   ============================================ */
+
+/* Pull subpage main content up closer to header */
+main:has(.subpage-hero) {
+    padding-top: 32px;
+}
+
+.subpage-hero {
+    padding: 32px 0 40px;
+    text-align: center;
+    max-width: 900px;
+    margin: 0 auto 32px;
+}
+
+.subpage-hero .section-stamp {
+    margin-bottom: 16px;
+}
+
+.subpage-hero h1 {
+    font-family: "Times New Roman", Times, serif;
+    font-weight: normal;
+    font-size: 44px;
+    line-height: 52px;
+    margin: 0 0 12px;
+}
+
+.subpage-tagline {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 20px;
+    line-height: 28px;
+    color: rgba(255, 255, 255, 0.7);
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   NAV ACTIVE STATE
+   ============================================ */
+
+.nav-contact.active {
+    opacity: 1;
+}
+
+/* ============================================
+   PRICING GRID
+   ============================================ */
+
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    padding: 0;
+    max-width: 100%;
+    margin: 0 auto 64px;
+}
+
+.pricing-tier {
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 32px 24px 28px;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+    transition: border-color 180ms ease;
+    --mx: 50%;
+    --my: 50%;
+    --glow: rgba(255, 255, 255, 0.08);
+}
+
+.pricing-tier:not(.sovereign) {
+    background:
+        radial-gradient(ellipse at top, rgba(255, 255, 255, 0.05) 0%, transparent 55%),
+        radial-gradient(ellipse at bottom, rgba(255, 255, 255, 0.025) 0%, transparent 60%);
+}
+
+.pricing-tier.featured,
+.pricing-tier.sovereign {
+    --glow: rgba(255, 120, 0, 0.14);
+}
+
+.pricing-tier::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(360px circle at var(--mx) var(--my), var(--glow), transparent 45%);
+    opacity: 0;
+    transition: opacity 300ms ease;
+    z-index: 0;
+}
+
+.pricing-tier > * {
+    position: relative;
+    z-index: 1;
+}
+
+.pricing-tier:hover::after {
+    opacity: 1;
+}
+
+.pricing-tier:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.pricing-tier.featured {
+    border-color: #FF7800;
+}
+
+.pricing-tier.sovereign {
+    border: none;
+    background: transparent;
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 56px 32px 44px;
+    margin-top: 24px;
+    position: relative;
+    overflow: visible;
+}
+
+/* The "rectangle" itself (dashed border + gradient) is painted on ::before
+   and scaled from 0 at center to full size over 5s. This is what gives
+   the "emerges from the middle" feel — the full rectangle grows out of
+   the tiny corner-bracket square. */
+.pricing-tier.sovereign::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px dashed rgba(255, 120, 0, 0.4);
+    background:
+        radial-gradient(ellipse at top, rgba(255, 120, 0, 0.08) 0%, transparent 55%),
+        radial-gradient(ellipse at bottom, rgba(255, 120, 0, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+    transform: scale(0);
+    transform-origin: center center;
+    transition: transform 2500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pricing-tier.sovereign.corners-open::before {
+    transform: scale(1);
+}
+
+/* Sovereign corner brackets: start squished in the middle as a tiny box,
+   then slide + grow outward to anchor at the tile's true corners.
+   Both brackets move + grow simultaneously over 5 seconds. */
+
+.corner-bracket {
+    position: absolute;
+    border: 2px solid #FF7800;
+    pointer-events: none;
+    z-index: 3;
+    width: 10px;
+    height: 10px;
+    transition:
+        top 2500ms cubic-bezier(0.22, 1, 0.36, 1),
+        left 2500ms cubic-bezier(0.22, 1, 0.36, 1),
+        right 2500ms cubic-bezier(0.22, 1, 0.36, 1),
+        bottom 2500ms cubic-bezier(0.22, 1, 0.36, 1),
+        width 2500ms cubic-bezier(0.22, 1, 0.36, 1),
+        height 2500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Initial position: squished together at tile center forming a tiny 20x20 box */
+.corner-tl {
+    top: calc(50% - 10px);
+    left: calc(50% - 10px);
+    border-right: none;
+    border-bottom: none;
+}
+
+.corner-br {
+    bottom: calc(50% - 10px);
+    right: calc(50% - 10px);
+    border-left: none;
+    border-top: none;
+}
+
+/* Final: anchored at the true corners at full size */
+.pricing-tier.sovereign.corners-open .corner-tl {
+    top: -2px;
+    left: -2px;
+    width: 60px;
+    height: 60px;
+}
+
+.pricing-tier.sovereign.corners-open .corner-br {
+    bottom: -2px;
+    right: -2px;
+    width: 60px;
+    height: 60px;
+}
+
+/* Content inside the sovereign tile stays hidden until corners finish expanding */
+.pricing-tier.sovereign > *:not(.corner-bracket) {
+    opacity: 0;
+    transition: opacity 900ms ease-out 2500ms;
+}
+
+.pricing-tier.sovereign.corners-open > *:not(.corner-bracket) {
+    opacity: 1;
+}
+
+.pricing-tier.sovereign .tier-badge {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.pricing-tier.sovereign .tier-name {
+    font-family: "Times New Roman", Times, serif;
+    font-weight: normal;
+    font-size: 48px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin: 0 0 12px;
+    color: #FF7800;
+}
+
+.pricing-tier.sovereign .tier-price,
+.pricing-tier.sovereign .tier-price .price-number {
+    justify-content: center;
+    font-family: "Times New Roman", Times, serif;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.pricing-tier.sovereign .tier-features {
+    max-width: 640px;
+    margin: 20px auto 16px;
+    columns: 2;
+    column-gap: 32px;
+    text-align: left;
+}
+
+.pricing-tier.sovereign .tier-features li {
+    break-inside: avoid;
+    border-bottom: 1px solid rgba(255, 120, 0, 0.18);
+    padding: 6px 0;
+}
+
+@media (max-width: 720px) {
+    .pricing-tier.sovereign .tier-name {
+        font-size: 32px;
+    }
+
+    .pricing-tier.sovereign .tier-features {
+        columns: 1;
+    }
+}
+
+.tier-badge {
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: #000;
+    color: #FF7800;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.12em;
+    padding: 3px 10px;
+    border: 1px solid #FF7800;
+    text-transform: uppercase;
+}
+
+.pricing-tier.sovereign .tier-badge {
+    color: rgba(255, 255, 255, 0.8);
+    border-color: rgba(255, 255, 255, 0.4);
+    border-style: dashed;
+}
+
+.tier-name {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    margin: 0 0 16px;
+    color: #FF7800;
+    text-transform: uppercase;
+}
+
+.tier-price {
+    margin: 0 0 6px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.price-number {
+    font-family: "Times New Roman", Times, serif;
+    font-weight: normal;
+    font-size: 40px;
+    line-height: 1;
+    color: #fff;
+}
+
+.price-unit {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.tier-meta {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 4px 0 24px;
+    min-height: 15px;
+    text-transform: uppercase;
+}
+
+.tier-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+    flex-grow: 1;
+}
+
+.tier-features li {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+    color: rgba(255, 255, 255, 0.85);
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.tier-features li:last-child {
+    border-bottom: none;
+}
+
+.pricing-tier.featured .tier-features li {
+    border-bottom-color: rgba(255, 120, 0, 0.2);
+}
+
+.tier-cta {
+    display: block;
+    text-align: center;
+    padding: 12px 20px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #FFFFFF;
+    text-decoration: none;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: all 200ms;
+}
+
+.tier-cta:hover {
+    background: #FFFFFF;
+    color: #000000;
+    border-color: #FFFFFF;
+}
+
+.pricing-tier.featured .tier-cta {
+    background: #FF7800;
+    color: #000000;
+    border-color: #FF7800;
+}
+
+.pricing-tier.featured .tier-cta:hover {
+    background: transparent;
+    color: #FF7800;
+}
+
+.sovereign-note {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+    text-align: center;
+    margin: 0;
+    padding: 12px 0;
+}
+
+/* ============================================
+   PRICING FINEPRINT (what's not charged)
+   ============================================ */
+
+.pricing-fineprint {
+    padding: 48px 0 48px;
+    max-width: 100%;
+    margin: 0 auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pricing-fineprint .section-stamp {
+    margin-bottom: 32px;
+}
+
+.fineprint-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px 40px;
+    max-width: 1040px;
+    margin: 0 auto;
+}
+
+.fineprint-item {
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (max-width: 900px) {
+    .fineprint-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 28px 32px;
+    }
+}
+
+@media (max-width: 520px) {
+    .fineprint-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+.fineprint-item h4 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #FF7800;
+    margin: 0 0 8px;
+}
+
+.fineprint-item p {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 22px;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0;
+}
+
+/* ============================================
+   SUBPAGE CTA
+   ============================================ */
+
+.subpage-cta {
+    text-align: center;
+    padding: 64px 0 32px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.subpage-cta h2 {
+    font-family: "Times New Roman", Times, serif;
+    font-weight: normal;
+    font-size: 36px;
+    line-height: 44px;
+    margin: 0 0 32px;
+}
+
+.subpage-cta .cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   ILLUSTRATIVE TAG
+   ============================================ */
+
+.illustrative-tag {
+    display: inline-block;
+    margin-left: 12px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.65);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/* ============================================
+   WHY IT MATTERS (on /how-it-works)
+   ============================================ */
+
+.why-it-matters {
+    padding: 48px 0;
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.why-it-matters .section-stamp {
+    margin-bottom: 32px;
+}
+
+.why-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 48px;
+    align-items: start;
+}
+
+.why-item {
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding-top: 20px;
+}
+
+.why-number {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 0.2em;
+    color: #FF7800;
+    margin-bottom: 16px;
+}
+
+.why-item h3 {
+    font-family: "Times New Roman", Times, serif;
+    font-weight: normal;
+    font-size: 24px;
+    line-height: 32px;
+    margin: 0;
+    color: #fff;
+}
+
+.why-item p {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 22px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 12px 0 0;
+}
+
+@media (max-width: 720px) {
+    .why-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+}
+
+/* ============================================
+   RESPONSIVE — SUBPAGES
+   ============================================ */
+
+@media (max-width: 720px) {
+    .subpage-hero {
+        padding: 32px 0 24px;
+    }
+
+    .subpage-hero h1 {
+        font-size: 30px;
+        line-height: 38px;
+    }
+
+    .pricing-grid {
+        padding: 0;
+    }
+
+    .pricing-fineprint {
+        padding: 32px 0 32px;
+    }
+
+    .subpage-cta {
+        padding: 40px 0 24px;
+    }
+
+    .subpage-cta h2 {
+        font-size: 24px;
         line-height: 32px;
     }
 }

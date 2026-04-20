@@ -1,9 +1,10 @@
 {
   "name": "synopticfeed-web",
   "version": "2.0.0",
-  "description": "SYNOPTICFEED - From Sky to Signal in Seconds",
+  "description": "SYNOPTICFEED - Satellite verification for power trading desks",
   "scripts": {
-    "dev": "node server.js"
+    "build": "node build.js",
+    "dev": "node build.js && node server.js"
   },
   "keywords": ["weather", "trading", "real-time"],
   "author": "Akbar Pathan",

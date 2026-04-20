@@ -14,12 +14,7 @@ const mimeTypes = {
     '.ico': 'image/x-icon'
 };
 
-const server = http.createServer((req, res) => {
-    let filePath = '.' + req.url;
-    if (filePath === './') {
-        filePath = './index.html';
-    }
-
+function serveFile(filePath, res) {
     const extname = path.extname(filePath).toLowerCase();
     const contentType = mimeTypes[extname] || 'application/octet-stream';
 
@@ -37,6 +32,31 @@ const server = http.createServer((req, res) => {
             res.end(content, 'utf-8');
         }
     });
+}
+
+const server = http.createServer((req, res) => {
+    // Strip query string
+    const urlPath = req.url.split('?')[0];
+    let filePath = '.' + urlPath;
+
+    if (filePath === './') {
+        filePath = './index.html';
+    }
+
+    // cleanUrls parity with Vercel: if path has no extension and file doesn't exist, try .html
+    if (!path.extname(filePath)) {
+        const htmlPath = filePath.replace(/\/$/, '') + '.html';
+        fs.access(htmlPath, fs.constants.F_OK, (err) => {
+            if (!err) {
+                serveFile(htmlPath, res);
+            } else {
+                serveFile(filePath, res);
+            }
+        });
+        return;
+    }
+
+    serveFile(filePath, res);
 });
 
 server.listen(PORT, () => {

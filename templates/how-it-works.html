@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How It Works — SYNOPTICFEED</title>
+    <meta name="description" content="How SynopticFeed works. GOES satellite direct broadcast, independent ground stations, real-time divergence detection, alerts before the next model run.">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="canonical" href="https://synopticfeed.com/how-it-works">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://synopticfeed.com/how-it-works">
+    <meta property="og:title" content="How It Works — SYNOPTICFEED">
+    <meta property="og:description" content="Satellite direct broadcast. Independent ground stations. Divergence detection in real time.">
+</head>
+<body>
+    {{HEADER}}
+
+    <main>
+        <section class="subpage-hero crt-boot">
+            <div class="section-stamp">SYNOPTICFEED // HOW IT WORKS</div>
+            <h1>Satellite to alarm in seconds.</h1>
+            <p class="subpage-tagline">Not another forecast.<br>The alarm when yours breaks.</p>
+        </section>
+
+        <section class="how-it-works scroll-reveal">
+            <div class="steps">
+                <div class="step scroll-reveal" data-delay="0">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="32" cy="32" r="28"/>
+                            <ellipse cx="32" cy="32" rx="28" ry="12"/>
+                            <line x1="32" y1="4" x2="32" y2="60"/>
+                            <circle cx="32" cy="8" r="3" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div class="step-number">01</div>
+                    <h3>SATELLITE</h3>
+                    <p>NOAA GOES-16/18 broadcasts atmospheric imagery every 60 seconds.</p>
+                </div>
+                <div class="step-connector scroll-reveal" data-delay="100">
+                    <svg viewBox="0 0 80 2" preserveAspectRatio="none">
+                        <line x1="0" y1="1" x2="80" y2="1" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4"/>
+                    </svg>
+                </div>
+                <div class="step scroll-reveal" data-delay="200">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="16" y="36" width="32" height="24" rx="2"/>
+                            <line x1="32" y1="12" x2="32" y2="36"/>
+                            <line x1="20" y1="20" x2="32" y2="12"/>
+                            <line x1="44" y1="20" x2="32" y2="12"/>
+                            <circle cx="32" cy="48" r="4"/>
+                        </svg>
+                    </div>
+                    <div class="step-number">02</div>
+                    <h3>GROUND STATION</h3>
+                    <p>We decode it ourselves, in seconds. Public pipelines lag 30-120 minutes.</p>
+                </div>
+                <div class="step-connector scroll-reveal" data-delay="300">
+                    <svg viewBox="0 0 80 2" preserveAspectRatio="none">
+                        <line x1="0" y1="1" x2="80" y2="1" stroke="currentColor" stroke-width="1" stroke-dasharray="4 4"/>
+                    </svg>
+                </div>
+                <div class="step scroll-reveal" data-delay="400">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M32 8 L56 20 L56 44 L32 56 L8 44 L8 20 Z"/>
+                            <circle cx="32" cy="32" r="8"/>
+                            <line x1="32" y1="24" x2="32" y2="16"/>
+                            <line x1="38" y1="28" x2="44" y2="22"/>
+                            <line x1="26" y1="28" x2="20" y2="22"/>
+                        </svg>
+                    </div>
+                    <div class="step-number">03</div>
+                    <h3>ALARM</h3>
+                    <p>When observation diverges from forecast, we fire. Confidence-tagged. Zone-scoped.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-section scroll-reveal">
+            <div class="section-stamp">SYNOPTICFEED // LIVE STATUS</div>
+            <div class="dashboard-mock" id="dashboardMock">
+                <div class="dashboard-header">
+                    <span class="dashboard-title">FORECAST VERIFICATION STATUS</span>
+                    <span class="dashboard-time" id="dashboardTime">--:--:--</span>
+                </div>
+                <div class="dashboard-zones">
+                    <div class="zone" data-zone="pjm-west">
+                        <span class="zone-name">PJM WESTERN</span>
+                        <span class="zone-status status-green">ALIGNED</span>
+                    </div>
+                    <div class="zone" data-zone="pjm-east">
+                        <span class="zone-name">PJM EASTERN</span>
+                        <span class="zone-status status-green">ALIGNED</span>
+                    </div>
+                    <div class="zone" data-zone="ercot">
+                        <span class="zone-name">ERCOT NORTH</span>
+                        <span class="zone-status status-green">ALIGNED</span>
+                    </div>
+                    <div class="zone" data-zone="miso">
+                        <span class="zone-name">MISO CENTRAL</span>
+                        <span class="zone-status status-green">ALIGNED</span>
+                    </div>
+                    <div class="zone" data-zone="caiso">
+                        <span class="zone-name">CAISO</span>
+                        <span class="zone-status status-green">ALIGNED</span>
+                    </div>
+                    <div class="zone" data-zone="nyiso">
+                        <span class="zone-name">NYISO</span>
+                        <span class="zone-status status-green">ALIGNED</span>
+                    </div>
+                </div>
+                <div class="dashboard-alert" id="dashboardAlert">
+                    <div class="alert-bar"></div>
+                    <div class="alert-content">
+                        <span class="alert-label">ALERT</span>
+                        <span class="alert-text" id="alertText"></span>
+                    </div>
+                </div>
+                <div class="dashboard-footer">
+                    <span>PROJECTED LATENCY <strong>&lt;2 min</strong></span>
+                    <span>COVERAGE <strong>U.S. INTERCONNECTS</strong></span>
+                </div>
+            </div>
+            <p class="dashboard-caption">Green means forecasts match reality. Red means they don't. <span class="caption-highlight">That 1% is where all the money is.</span></p>
+        </section>
+
+        <section class="why-it-matters scroll-reveal">
+            <div class="section-stamp">SYNOPTICFEED // WHY IT MATTERS</div>
+            <div class="why-grid">
+                <div class="why-item">
+                    <div class="why-number">01</div>
+                    <h3>Forecasts update every 4-6 hours.</h3>
+                    <p>Weather models run on a schedule. Between runs, no one is watching what the sky is actually doing.</p>
+                </div>
+                <div class="why-item">
+                    <div class="why-number">02</div>
+                    <h3>Satellites update every 5 minutes.</h3>
+                    <p>The satellites overhead are always looking down. We read that signal in real time.</p>
+                </div>
+                <div class="why-item">
+                    <div class="why-number">03</div>
+                    <h3>We close the gap.</h3>
+                    <p>The alarm fires the moment real weather disagrees with the forecast you are trading on.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="subpage-cta">
+            <h2>Catch the next forecast break, first.</h2>
+            <div class="cta-buttons">
+                <a href="https://forms.gle/xKpWRHwwUgGC9CyK9" target="_blank" rel="noopener noreferrer" class="btn-primary">GET ALPHA ACCESS</a>
+            </div>
+        </section>
+    </main>
+
+    {{FOOTER}}
+</body>
+</html>
