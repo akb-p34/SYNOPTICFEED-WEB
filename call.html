@@ -651,6 +651,29 @@
                 if (el) el.addEventListener('input', function () { setFieldError(n, false); });
             });
 
+            function capturePartial() {
+                try {
+                    var fd = new FormData(form);
+                    var payload = {
+                        stage: 'partial',
+                        name: (fd.get('name') || '').trim(),
+                        email: (fd.get('email') || '').trim(),
+                        company: (fd.get('company') || '').trim(),
+                        title: (fd.get('title') || '').trim(),
+                        linkedin: (fd.get('linkedin') || '').trim(),
+                        visitor_id: getCookie('syf_visitor_id'),
+                        source: 'call-page',
+                        website: fd.get('website') || ''
+                    };
+                    fetch('/api/intro-call', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        keepalive: true
+                    }).catch(function () {});
+                } catch (_) {}
+            }
+
             nextBtn.addEventListener('click', function () {
                 var failed = validatePage1();
                 clearAllErrors(err1, ['name', 'email', 'company', 'title']);
@@ -659,6 +682,7 @@
                     trackEvent('call-page:next-validation-failed');
                     return;
                 }
+                capturePartial();
                 trackEvent('call-page:advance-to-step-2');
                 page1.hidden = true;
                 showStep(page2);
@@ -706,6 +730,7 @@
                 var weatherStack = mergeOther(fd.getAll('weather_stack'), fd.get('weather_stack_other'));
 
                 const payload = {
+                    stage: 'complete',
                     name: (fd.get('name') || '').trim(),
                     email: (fd.get('email') || '').trim(),
                     company: (fd.get('company') || '').trim(),

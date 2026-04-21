@@ -52,9 +52,14 @@ module.exports = async function handler(req, res) {
     }
 
     const body = req.body || {};
+    const stage = body.stage === 'partial' ? 'partial' : 'complete';
 
     if (body.website || body.fax) {
-        res.status(200).json({ ok: true, redirect: CALENDLY_BASE });
+        if (stage === 'partial') {
+            res.status(200).json({ ok: true });
+        } else {
+            res.status(200).json({ ok: true, redirect: CALENDLY_BASE });
+        }
         return;
     }
 
@@ -68,28 +73,54 @@ module.exports = async function handler(req, res) {
     const linkedin = clean(body.linkedin, 500);
     const eoi = Boolean(body.eoi);
 
-    if (!isValidEmail(email) || !name || !company || !title || !eoi) {
+    const step1Invalid = !isValidEmail(email) || !name || !company || !title;
+    if (step1Invalid || (stage === 'complete' && !eoi)) {
         res.status(400).json({ error: 'Invalid input' });
         return;
     }
 
-    const entry = {
+    const baseEntry = {
         email,
         name,
         company,
         title,
-        isos,
-        trade_types: tradeTypes,
-        weather_stack: weatherStack,
         linkedin: linkedin || null,
-        eoi,
         visitor_id: clean(body.visitor_id, 36) || null,
         utm_source: clean(body.utm_source, 120) || null,
         utm_medium: clean(body.utm_medium, 120) || null,
         utm_campaign: clean(body.utm_campaign, 160) || null,
         user_agent: clean(req.headers['user-agent'], 500),
-        source: clean(body.source, 40) || 'call-page'
+        source: clean(body.source, 40) || 'call-page',
+        stage
     };
+
+    const entry = stage === 'complete'
+        ? { ...baseEntry, isos, trade_types: tradeTypes, weather_stack: weatherStack, eoi }
+        : baseEntry;
+
+    if (stage === 'partial') {
+        try {
+            const sb = getClient();
+            const { data: existing, error: selectError } = await sb
+                .from('intro_call_requests')
+                .select('stage')
+                .eq('email', email)
+                .maybeSingle();
+            if (selectError) console.error('intro_call_requests select error', selectError);
+            if (existing && existing.stage === 'complete') {
+                res.status(200).json({ ok: true });
+                return;
+            }
+            const { error: upsertError } = await sb
+                .from('intro_call_requests')
+                .upsert(entry, { onConflict: 'email' });
+            if (upsertError) console.error('intro_call_requests partial upsert error', upsertError);
+        } catch (err) {
+            console.error('intro_call_requests partial storage error', err);
+        }
+        res.status(200).json({ ok: true });
+        return;
+    }
 
     const redirect = buildCalendlyUrl(name, email);
 
