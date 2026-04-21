@@ -235,6 +235,52 @@
             .call-choice { font-size: 17px; }
         }
 
+        /* Error state: specific field outlined in red */
+        .call-field.has-error,
+        .call-eoi.has-error {
+            border-radius: 12px;
+            box-shadow: 0 0 0 2px var(--call-danger), 0 0 0 6px rgba(239, 68, 68, 0.15);
+            padding: 12px;
+            margin-left: -12px;
+            margin-right: -12px;
+            transition: box-shadow 200ms var(--ease);
+        }
+        .call-field.has-error > span.label {
+            color: var(--call-danger);
+        }
+
+        /* "All of the above" choice — subtle differentiation, same height */
+        .call-choice-all {
+            border-style: dashed;
+            opacity: 0.92;
+        }
+        .call-choice-all:has(input:checked) {
+            border-style: solid;
+        }
+
+        /* Reveal-on-check text input for "Other" */
+        .call-other-input {
+            width: 100%;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 18px;
+            padding: 14px 18px;
+            margin-top: 10px;
+            border: 2px solid var(--call-border);
+            background: var(--call-surface);
+            color: var(--call-text);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease), opacity 200ms var(--ease);
+            animation: callFadeUp 200ms var(--ease) both;
+        }
+        .call-other-input:focus {
+            border-color: var(--call-border-focus);
+            box-shadow: 0 0 0 3px var(--call-accent-glow);
+        }
+
         /* Light entry + step transitions */
         @keyframes callFadeUp {
             from { opacity: 0; transform: translateY(8px); }
@@ -285,22 +331,22 @@
             <section id="call-page-1" class="call-page">
                 <p class="call-progress">Step 1 of 2</p>
 
-                <label class="call-field">
+                <label class="call-field" data-field="name" data-label="Full name">
                     <span class="label">Full name</span>
                     <input type="text" name="name" required autocomplete="name" maxlength="120" autofocus>
                 </label>
 
-                <label class="call-field">
+                <label class="call-field" data-field="email" data-label="Email">
                     <span class="label">Email</span>
                     <input type="email" name="email" required autocomplete="email" maxlength="254" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
                 </label>
 
-                <label class="call-field">
+                <label class="call-field" data-field="company" data-label="Company">
                     <span class="label">Company</span>
                     <input type="text" name="company" required autocomplete="organization" maxlength="160">
                 </label>
 
-                <label class="call-field">
+                <label class="call-field" data-field="title" data-label="Title / role">
                     <span class="label">Title / role</span>
                     <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
                 </label>
@@ -312,9 +358,10 @@
             <section id="call-page-2" class="call-page" hidden>
                 <p class="call-progress">Step 2 of 2</p>
 
-                <div class="call-field">
+                <div class="call-field" data-field="isos" data-label="ISO regions">
                     <span class="label">Which ISOs does your desk trade?</span>
                     <div class="call-choices">
+                        <label class="call-choice call-choice-all"><input type="checkbox" data-all-for="isos"> All of the above</label>
                         <label class="call-choice"><input type="checkbox" name="isos" value="PJM"> PJM</label>
                         <label class="call-choice"><input type="checkbox" name="isos" value="ERCOT"> ERCOT</label>
                         <label class="call-choice"><input type="checkbox" name="isos" value="CAISO"> CAISO</label>
@@ -322,33 +369,38 @@
                         <label class="call-choice"><input type="checkbox" name="isos" value="MISO"> MISO</label>
                         <label class="call-choice"><input type="checkbox" name="isos" value="NYISO"> NYISO</label>
                         <label class="call-choice"><input type="checkbox" name="isos" value="SPP"> SPP</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="Other"> Other</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="Other" data-other="isos"> Other</label>
                     </div>
+                    <input type="text" class="call-other-input" name="isos_other" data-other-input="isos" placeholder="Which other ISO(s)?" maxlength="120" hidden>
                 </div>
 
-                <div class="call-field">
+                <div class="call-field" data-field="trade_types" data-label="What your desk trades">
                     <span class="label">What does your desk trade?</span>
                     <div class="call-choices">
+                        <label class="call-choice call-choice-all"><input type="radio" name="trade_types" value="All of the above"> All of the above</label>
                         <label class="call-choice"><input type="radio" name="trade_types" value="Day-ahead spot"> Day-ahead spot</label>
                         <label class="call-choice"><input type="radio" name="trade_types" value="Real-time spot"> Real-time spot</label>
                         <label class="call-choice"><input type="radio" name="trade_types" value="Futures"> Futures</label>
                         <label class="call-choice"><input type="radio" name="trade_types" value="FTR / congestion"> FTR / congestion</label>
                         <label class="call-choice"><input type="radio" name="trade_types" value="Long-term portfolio"> Long-term portfolio</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="Other"> Other</label>
+                        <label class="call-choice"><input type="radio" name="trade_types" value="Other" data-other="trade_types"> Other</label>
                     </div>
+                    <input type="text" class="call-other-input" name="trade_types_other" data-other-input="trade_types" placeholder="What do you trade?" maxlength="120" hidden>
                 </div>
 
-                <div class="call-field">
+                <div class="call-field" data-field="weather_stack" data-label="Weather stack">
                     <span class="label">How does weather data get to your desk today?</span>
                     <div class="call-choices">
+                        <label class="call-choice call-choice-all"><input type="checkbox" data-all-for="weather_stack"> All of the above</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="NWS / NOAA"> NWS / NOAA public feeds</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="DTN"> DTN / Frontier Weather</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="CWG"> Commodity Weather Group</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="Tomorrow.io"> Tomorrow.io / Climavision</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="AccuWeather"> AccuWeather</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="Internal met team"> Internal meteorology team</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Other"> Other</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Other" data-other="weather_stack"> Other</label>
                     </div>
+                    <input type="text" class="call-other-input" name="weather_stack_other" data-other-input="weather_stack" placeholder="Which other source(s)?" maxlength="120" hidden>
                 </div>
 
                 <label class="call-field">
@@ -356,7 +408,7 @@
                     <input type="url" name="linkedin" placeholder="linkedin.com/in/..." maxlength="500" autocapitalize="none" autocorrect="off" spellcheck="false">
                 </label>
 
-                <label class="call-eoi">
+                <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
                     <input type="checkbox" name="eoi" required>
                     <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
                 </label>
@@ -407,36 +459,61 @@
                 } catch (_) {}
             }
 
+            function fieldWrap(fieldName) {
+                return form.querySelector('[data-field="' + fieldName + '"]');
+            }
+            function fieldLabel(fieldName) {
+                var el = fieldWrap(fieldName);
+                return (el && el.getAttribute('data-label')) || fieldName;
+            }
+            function setFieldError(fieldName, hasError) {
+                var el = fieldWrap(fieldName);
+                if (!el) return;
+                el.classList.toggle('has-error', !!hasError);
+            }
+            function clearAllErrors(errEl, fieldNames) {
+                if (errEl) errEl.textContent = '';
+                fieldNames.forEach(function (n) { setFieldError(n, false); });
+            }
+            function renderErrors(errEl, failedFields) {
+                if (!failedFields.length) { errEl.textContent = ''; return; }
+                var labels = failedFields.map(fieldLabel);
+                var msg = labels.length === 1
+                    ? 'Please fix: ' + labels[0] + '.'
+                    : 'Please fix: ' + labels.slice(0, -1).join(', ') + ', and ' + labels[labels.length - 1] + '.';
+                errEl.textContent = msg;
+                failedFields.forEach(function (n) { setFieldError(n, true); });
+                // Focus first errored field for accessibility
+                var first = fieldWrap(failedFields[0]);
+                if (first) {
+                    var input = first.querySelector('input, select, textarea');
+                    if (input && typeof input.focus === 'function') input.focus();
+                }
+            }
+
             function validatePage1() {
-                const required = ['name', 'email', 'company', 'title'];
-                for (const n of required) {
-                    const input = form.elements[n];
-                    if (!input || !input.value.trim()) {
-                        err1.textContent = 'Please fill in all fields.';
-                        input?.focus();
-                        return false;
-                    }
+                var failed = [];
+                ['name', 'email', 'company', 'title'].forEach(function (n) {
+                    var input = form.elements[n];
+                    if (!input || !input.value.trim()) failed.push(n);
+                });
+                if (failed.indexOf('email') === -1) {
+                    var emailVal = form.elements.email.value.trim();
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) failed.push('email');
                 }
-                const emailVal = form.elements.email.value.trim();
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-                    err1.textContent = 'Please enter a valid email.';
-                    form.elements.email.focus();
-                    return false;
-                }
-                err1.textContent = '';
-                return true;
+                return failed;
             }
 
             function validatePage2() {
-                const isos = form.querySelectorAll('input[name="isos"]:checked');
-                if (!isos.length) { err2.textContent = 'Please select at least one ISO.'; return false; }
-                const trade = form.querySelector('input[name="trade_types"]:checked');
-                if (!trade) { err2.textContent = 'Please tell us what your desk trades.'; return false; }
-                const weather = form.querySelectorAll('input[name="weather_stack"]:checked');
-                if (!weather.length) { err2.textContent = 'Please select at least one weather source.'; return false; }
-                if (!form.elements.eoi.checked) { err2.textContent = 'Please confirm your interest to continue.'; return false; }
-                err2.textContent = '';
-                return true;
+                var failed = [];
+                var isos = form.querySelectorAll('input[name="isos"]:checked');
+                if (!isos.length) failed.push('isos');
+                var trade = form.querySelector('input[name="trade_types"]:checked');
+                if (!trade) failed.push('trade_types');
+                var weather = form.querySelectorAll('input[name="weather_stack"]:checked');
+                if (!weather.length) failed.push('weather_stack');
+                if (!form.elements.eoi.checked) failed.push('eoi');
+                return failed;
             }
 
             trackEvent('call-page:loaded');
@@ -479,23 +556,97 @@
                 });
             }
 
-            // Choice-change tracking for all ISO / trade-type / weather-stack / EOI
+            // "All of the above" <-> individual checkboxes two-way sync
+            function syncAllToggle(groupName) {
+                var allEl = form.querySelector('[data-all-for="' + groupName + '"]');
+                if (!allEl) return;
+                var items = form.querySelectorAll('input[name="' + groupName + '"]');
+                var checkedCount = 0;
+                items.forEach(function (i) { if (i.checked) checkedCount++; });
+                allEl.checked = checkedCount > 0 && checkedCount === items.length;
+            }
+
+            function toggleAll(groupName, checked) {
+                var items = form.querySelectorAll('input[name="' + groupName + '"]');
+                items.forEach(function (i) {
+                    if (i.checked !== checked) {
+                        i.checked = checked;
+                        // fire change events so dependent UI (Other reveal + tracking) stays in sync
+                        i.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                });
+            }
+
+            // "Other" text field reveal
+            function toggleOtherInput(groupName, visible) {
+                var input = form.querySelector('[data-other-input="' + groupName + '"]');
+                if (!input) return;
+                input.hidden = !visible;
+                if (visible) {
+                    setTimeout(function () { input.focus(); }, 30);
+                } else {
+                    input.value = '';
+                }
+            }
+
+            // Centralized change handler: all-toggle, other-reveal, tracking, error-clear
             form.addEventListener('change', function (e) {
                 var input = e.target;
-                if (!input || !input.name) return;
+                if (!input) return;
+
+                // "All of the above" toggling (checkboxes only — radios handle themselves)
+                var allFor = input.getAttribute && input.getAttribute('data-all-for');
+                if (allFor) {
+                    toggleAll(allFor, input.checked);
+                    // If All is on and Other is auto-checked, show its text input too
+                    var otherEl = form.querySelector('[data-other="' + allFor + '"]');
+                    if (otherEl) toggleOtherInput(allFor, otherEl.checked);
+                    return;
+                }
+
+                // Individual choice → may need to sync "All of the above"
+                if (input.name) {
+                    syncAllToggle(input.name);
+                }
+
+                // "Other" checkbox/radio → reveal text field
+                var otherGroup = input.getAttribute && input.getAttribute('data-other');
+                if (otherGroup) {
+                    toggleOtherInput(otherGroup, !!input.checked);
+                }
+
+                // When a radio in trade_types changes, handle Other visibility too
+                if (input.type === 'radio' && input.name === 'trade_types') {
+                    toggleOtherInput('trade_types', input.value === 'Other');
+                }
+
+                // Tracking + error clearing
                 if (input.name === 'isos') {
                     if (input.checked) trackEvent('call:choice:iso-' + slug(input.value));
+                    setFieldError('isos', false);
                 } else if (input.name === 'trade_types') {
                     if (input.checked) trackEvent('call:choice:trade-' + slug(input.value));
+                    setFieldError('trade_types', false);
                 } else if (input.name === 'weather_stack') {
                     if (input.checked) trackEvent('call:choice:weather-' + slug(input.value));
+                    setFieldError('weather_stack', false);
                 } else if (input.name === 'eoi') {
                     trackEvent('call:choice:eoi-' + (input.checked ? 'on' : 'off'));
+                    setFieldError('eoi', false);
                 }
             });
 
+            // Clear Step-1 errors on input
+            ['name', 'email', 'company', 'title'].forEach(function (n) {
+                var el = form.elements[n];
+                if (el) el.addEventListener('input', function () { setFieldError(n, false); });
+            });
+
             nextBtn.addEventListener('click', function () {
-                if (!validatePage1()) {
+                var failed = validatePage1();
+                clearAllErrors(err1, ['name', 'email', 'company', 'title']);
+                if (failed.length) {
+                    renderErrors(err1, failed);
                     trackEvent('call-page:next-validation-failed');
                     return;
                 }
@@ -514,7 +665,10 @@
 
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                if (!validatePage2()) {
+                var failed = validatePage2();
+                clearAllErrors(err2, ['isos', 'trade_types', 'weather_stack', 'eoi']);
+                if (failed.length) {
+                    renderErrors(err2, failed);
                     trackEvent('call-page:submit-validation-failed');
                     return;
                 }
@@ -525,14 +679,31 @@
                 trackEvent('call-page:submit-started');
 
                 const fd = new FormData(form);
+
+                // Merge "Other" free-text into the relevant array in place of "Other".
+                // For trade_types (single value), replace "Other" with the text.
+                function mergeOther(values, otherText) {
+                    var t = (otherText || '').trim();
+                    if (!t) return values;
+                    return values.map(function (v) { return v === 'Other' ? ('Other: ' + t) : v; });
+                }
+
+                var isos = mergeOther(fd.getAll('isos'), fd.get('isos_other'));
+                var tradeTypesRaw = fd.getAll('trade_types');
+                var tradeOther = (fd.get('trade_types_other') || '').trim();
+                var tradeTypes = tradeTypesRaw.map(function (v) {
+                    return v === 'Other' && tradeOther ? ('Other: ' + tradeOther) : v;
+                });
+                var weatherStack = mergeOther(fd.getAll('weather_stack'), fd.get('weather_stack_other'));
+
                 const payload = {
                     name: (fd.get('name') || '').trim(),
                     email: (fd.get('email') || '').trim(),
                     company: (fd.get('company') || '').trim(),
                     title: (fd.get('title') || '').trim(),
-                    isos: fd.getAll('isos'),
-                    trade_types: fd.getAll('trade_types'),
-                    weather_stack: fd.getAll('weather_stack'),
+                    isos: isos,
+                    trade_types: tradeTypes,
+                    weather_stack: weatherStack,
                     linkedin: (fd.get('linkedin') || '').trim(),
                     eoi: !!fd.get('eoi'),
                     visitor_id: getCookie('syf_visitor_id'),
