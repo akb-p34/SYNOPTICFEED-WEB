@@ -556,22 +556,31 @@
                 });
             }
 
-            // "All of the above" <-> individual checkboxes two-way sync
+            // "All of the above" <-> individual checkboxes two-way sync.
+            // Excludes the "Other" option — "Other" is a placeholder for free-text,
+            // not a real choice, so "All of the above" shouldn't touch it.
+            function realItems(groupName) {
+                return Array.prototype.filter.call(
+                    form.querySelectorAll('input[name="' + groupName + '"]'),
+                    function (i) { return !i.hasAttribute('data-other'); }
+                );
+            }
+
             function syncAllToggle(groupName) {
                 var allEl = form.querySelector('[data-all-for="' + groupName + '"]');
                 if (!allEl) return;
-                var items = form.querySelectorAll('input[name="' + groupName + '"]');
+                var items = realItems(groupName);
+                if (!items.length) return;
                 var checkedCount = 0;
                 items.forEach(function (i) { if (i.checked) checkedCount++; });
                 allEl.checked = checkedCount > 0 && checkedCount === items.length;
             }
 
             function toggleAll(groupName, checked) {
-                var items = form.querySelectorAll('input[name="' + groupName + '"]');
-                items.forEach(function (i) {
+                realItems(groupName).forEach(function (i) {
                     if (i.checked !== checked) {
                         i.checked = checked;
-                        // fire change events so dependent UI (Other reveal + tracking) stays in sync
+                        // fire change events so dependent UI (tracking, error-clear) stays in sync
                         i.dispatchEvent(new Event('change', { bubbles: true }));
                     }
                 });
