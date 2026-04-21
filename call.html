@@ -313,6 +313,116 @@
                 transition: none !important;
             }
         }
+
+        /* Alarm-card mock on Step 2 — mirrors deck page 6 */
+        .call-alarm-card {
+            margin: 0 0 28px;
+            border: 1px solid var(--call-border);
+            border-radius: 12px;
+            background: var(--call-surface);
+            overflow: hidden;
+        }
+        .call-alarm-chrome {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--call-border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .call-alarm-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            display: inline-block;
+        }
+        .call-alarm-dot:nth-child(1) { background: #ff5f56; opacity: 0.55; }
+        .call-alarm-dot:nth-child(2) { background: #ffbd2e; opacity: 0.55; }
+        .call-alarm-dot:nth-child(3) { background: #27c93f; opacity: 0.55; }
+        .call-alarm-url {
+            margin-left: 10px;
+            font-size: 12px;
+            color: var(--call-text-faint);
+            font-family: "SF Mono", Menlo, Consolas, monospace;
+            letter-spacing: 0.01em;
+        }
+        .call-alarm-body {
+            padding: 22px 24px 20px;
+        }
+        .call-alarm-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: var(--call-accent);
+            color: #000;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+        }
+        .call-alarm-body h3 {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 22px;
+            font-weight: normal;
+            line-height: 1.25;
+            letter-spacing: -0.005em;
+            margin: 0 0 10px;
+            color: var(--call-text);
+        }
+        .call-alarm-body p {
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--call-text-dim);
+            margin: 0 0 18px;
+        }
+        .call-alarm-meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            border-top: 1px solid var(--call-border);
+            padding-top: 14px;
+        }
+        .call-alarm-meta > div {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .call-alarm-meta .k {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.09em;
+            color: var(--call-text-faint);
+        }
+        .call-alarm-meta .v {
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            color: var(--call-text);
+        }
+        .call-alarm-caption {
+            font-size: 12px;
+            color: var(--call-text-faint);
+            text-align: center;
+            margin: 12px 0 0;
+            font-style: italic;
+        }
+        .call-step2-intro {
+            font-size: 14px;
+            color: var(--call-text-dim);
+            margin: 0 0 20px;
+        }
+        .call-hint {
+            color: var(--call-text-faint);
+            font-weight: 400;
+            font-size: 13px;
+            margin-left: 6px;
+        }
+        @media (max-width: 480px) {
+            .call-alarm-body { padding: 18px 16px 16px; }
+            .call-alarm-body h3 { font-size: 18px; }
+            .call-alarm-meta { grid-template-columns: 1fr 1fr; gap: 10px; }
+        }
     </style>
 </head>
 <body class="call-body">
@@ -351,6 +461,11 @@
                     <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
                 </label>
 
+                <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
+                    <input type="checkbox" name="eoi" required>
+                    <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
+                </label>
+
                 <button type="button" class="call-btn" data-next>Next &rarr;</button>
                 <p class="call-error" data-error="1"></p>
             </section>
@@ -358,8 +473,30 @@
             <section id="call-page-2" class="call-page" hidden>
                 <p class="call-progress">Step 2 of 2</p>
 
+                <div class="call-alarm-card" aria-hidden="true">
+                    <div class="call-alarm-chrome">
+                        <span class="call-alarm-dot"></span>
+                        <span class="call-alarm-dot"></span>
+                        <span class="call-alarm-dot"></span>
+                        <span class="call-alarm-url">synopticfeed.com &middot; alert dashboard</span>
+                    </div>
+                    <div class="call-alarm-body">
+                        <span class="call-alarm-tag">DIVERGENCE DETECTED</span>
+                        <h3>GFS under-forecasting cloud cover in PJM Western Hub.</h3>
+                        <p>Satellite deck is heavier than the 09:00 NWS run predicted. Day-ahead solar is over-forecast. Balancing exposure is up.</p>
+                        <div class="call-alarm-meta">
+                            <div><span class="k">CONFIDENCE</span><span class="v">HIGH</span></div>
+                            <div><span class="k">ZONE</span><span class="v">PJM WESTERN HUB</span></div>
+                            <div><span class="k">FIRED</span><span class="v">09:12 EDT</span></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="call-alarm-caption">A preview. This is what a live divergence looks like.</p>
+
+                <p class="call-step2-intro">Help us prep for your call &mdash; all optional below.</p>
+
                 <div class="call-field" data-field="isos" data-label="ISO regions">
-                    <span class="label">Which ISOs does your desk trade?</span>
+                    <span class="label">Which ISOs does your desk trade? <span class="call-hint">(optional)</span></span>
                     <div class="call-choices">
                         <label class="call-choice call-choice-all"><input type="checkbox" data-all-for="isos"> All of the above</label>
                         <label class="call-choice"><input type="checkbox" name="isos" value="PJM"> PJM</label>
@@ -375,7 +512,7 @@
                 </div>
 
                 <div class="call-field" data-field="trade_types" data-label="What your desk trades">
-                    <span class="label">What does your desk trade?</span>
+                    <span class="label">What does your desk trade? <span class="call-hint">(optional)</span></span>
                     <div class="call-choices">
                         <label class="call-choice call-choice-all"><input type="radio" name="trade_types" value="All of the above"> All of the above</label>
                         <label class="call-choice"><input type="radio" name="trade_types" value="Day-ahead spot"> Day-ahead spot</label>
@@ -389,7 +526,7 @@
                 </div>
 
                 <div class="call-field" data-field="weather_stack" data-label="Weather stack">
-                    <span class="label">How does weather data get to your desk today?</span>
+                    <span class="label">How does weather data get to your desk today? <span class="call-hint">(optional)</span></span>
                     <div class="call-choices">
                         <label class="call-choice call-choice-all"><input type="checkbox" data-all-for="weather_stack"> All of the above</label>
                         <label class="call-choice"><input type="checkbox" name="weather_stack" value="NWS / NOAA"> NWS / NOAA public feeds</label>
@@ -406,11 +543,6 @@
                 <label class="call-field">
                     <span class="label">LinkedIn <span style="color: var(--call-text-faint); font-weight: 400;">(optional)</span></span>
                     <input type="url" name="linkedin" placeholder="linkedin.com/in/..." maxlength="500" autocapitalize="none" autocorrect="off" spellcheck="false">
-                </label>
-
-                <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
-                    <input type="checkbox" name="eoi" required>
-                    <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
                 </label>
 
                 <div class="call-hp" aria-hidden="true">
@@ -501,19 +633,12 @@
                     var emailVal = form.elements.email.value.trim();
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) failed.push('email');
                 }
+                if (!form.elements.eoi.checked) failed.push('eoi');
                 return failed;
             }
 
             function validatePage2() {
-                var failed = [];
-                var isos = form.querySelectorAll('input[name="isos"]:checked');
-                if (!isos.length) failed.push('isos');
-                var trade = form.querySelector('input[name="trade_types"]:checked');
-                if (!trade) failed.push('trade_types');
-                var weather = form.querySelectorAll('input[name="weather_stack"]:checked');
-                if (!weather.length) failed.push('weather_stack');
-                if (!form.elements.eoi.checked) failed.push('eoi');
-                return failed;
+                return [];
             }
 
             trackEvent('call-page:loaded');
@@ -661,6 +786,7 @@
                         company: (fd.get('company') || '').trim(),
                         title: (fd.get('title') || '').trim(),
                         linkedin: (fd.get('linkedin') || '').trim(),
+                        eoi: !!fd.get('eoi'),
                         visitor_id: getCookie('syf_visitor_id'),
                         source: 'call-page',
                         website: fd.get('website') || ''
@@ -676,7 +802,7 @@
 
             nextBtn.addEventListener('click', function () {
                 var failed = validatePage1();
-                clearAllErrors(err1, ['name', 'email', 'company', 'title']);
+                clearAllErrors(err1, ['name', 'email', 'company', 'title', 'eoi']);
                 if (failed.length) {
                     renderErrors(err1, failed);
                     trackEvent('call-page:next-validation-failed');
@@ -699,7 +825,7 @@
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 var failed = validatePage2();
-                clearAllErrors(err2, ['isos', 'trade_types', 'weather_stack', 'eoi']);
+                clearAllErrors(err2, ['isos', 'trade_types', 'weather_stack']);
                 if (failed.length) {
                     renderErrors(err2, failed);
                     trackEvent('call-page:submit-validation-failed');

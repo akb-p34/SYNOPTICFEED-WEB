@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
 
     const entry = stage === 'complete'
         ? { ...baseEntry, isos, trade_types: tradeTypes, weather_stack: weatherStack, eoi }
-        : baseEntry;
+        : { ...baseEntry, eoi };
 
     if (stage === 'partial') {
         try {
