@@ -507,12 +507,13 @@
                 });
             }
 
-            // EOI tracking + error clear on change
+            // EOI tracking + error clear + autosave on change
             form.addEventListener('change', function (e) {
                 var input = e.target;
                 if (!input || input.name !== 'eoi') return;
                 trackEvent('call:choice:eoi-' + (input.checked ? 'on' : 'off'));
                 setFieldError('eoi', false);
+                autosave();
             });
 
             // Clear field errors on input
@@ -521,35 +522,59 @@
                 if (el) el.addEventListener('input', function () { setFieldError(n, false); });
             });
 
-            // Overwrite-safe: only include fields with non-whitespace values.
-            // Omitted fields never replace existing DB values on the partial upsert.
-            function capturePartial() {
+            // Build current-state partial payload from filled fields only.
+            // Returns null if email isn't valid yet — email is the upsert conflict key,
+            // so no save can happen without it. Overwrite-safe: empty/whitespace values
+            // are omitted, and omitted fields preserve whatever's already on the DB row.
+            function buildPartialPayload() {
+                var fd = new FormData(form);
+                var email = String(fd.get('email') || '').trim().toLowerCase();
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+
+                var payload = { stage: 'partial', email: email };
+
+                function addIfFilled(key, raw) {
+                    if (raw === null || raw === undefined) return;
+                    var v = String(raw).trim();
+                    if (!v) return;
+                    payload[key] = v;
+                }
+
+                addIfFilled('name', fd.get('name'));
+
+                // Phone: only include when the digit count is valid (10-15).
+                var phoneRaw = String(fd.get('phone') || '').trim();
+                if (phoneRaw) {
+                    var pDigits = phoneDigits(phoneRaw);
+                    if (pDigits.length >= 10 && pDigits.length <= 15) payload.phone = phoneRaw;
+                }
+
+                addIfFilled('company', fd.get('company'));
+                addIfFilled('title', fd.get('title'));
+                addIfFilled('linkedin', fd.get('linkedin'));
+
+                // EOI: only send when checked. Never downgrade a consented lead.
+                if (fd.get('eoi')) payload.eoi = true;
+
+                var vid = getCookie('syf_visitor_id');
+                if (vid) payload.visitor_id = vid;
+                payload.source = 'call-page';
+                payload.website = fd.get('website') || '';
+
+                return payload;
+            }
+
+            // Per-field autosave. Fires on every blur; skips the POST when the
+            // current-state payload hasn't changed since the last send.
+            var lastSentKey = '';
+            function autosave() {
+                var payload = buildPartialPayload();
+                if (!payload) return;
+                var key = JSON.stringify(payload);
+                if (key === lastSentKey) return;
+                lastSentKey = key;
+                trackEvent('call-page:autosave');
                 try {
-                    var fd = new FormData(form);
-                    var payload = { stage: 'partial' };
-
-                    function addIfFilled(key, raw) {
-                        if (raw === null || raw === undefined) return;
-                        var v = String(raw).trim();
-                        if (!v) return;
-                        payload[key] = v;
-                    }
-
-                    addIfFilled('name', fd.get('name'));
-                    addIfFilled('email', fd.get('email'));
-                    addIfFilled('phone', fd.get('phone'));
-                    addIfFilled('company', fd.get('company'));
-                    addIfFilled('title', fd.get('title'));
-                    addIfFilled('linkedin', fd.get('linkedin'));
-
-                    // EOI: only send when checked. Never downgrade a consented lead.
-                    if (fd.get('eoi')) payload.eoi = true;
-
-                    var vid = getCookie('syf_visitor_id');
-                    if (vid) payload.visitor_id = vid;
-                    payload.source = 'call-page';
-                    payload.website = fd.get('website') || '';
-
                     fetch('/api/intro-call', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -559,28 +584,9 @@
                 } catch (_) {}
             }
 
-            // Fire partial exactly once per page load, after all required contact
-            // fields are filled and both email + phone are valid. Covers the
-            // "typed everything, never clicked submit" lead.
-            var partialFired = false;
-            function maybeFirePartial() {
-                if (partialFired) return;
-                var n = (form.elements.name.value || '').trim();
-                var em = (form.elements.email.value || '').trim();
-                var p = (form.elements.phone.value || '').trim();
-                var c = (form.elements.company.value || '').trim();
-                var t = (form.elements.title.value || '').trim();
-                if (!n || !em || !p || !c || !t) return;
-                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return;
-                var pDigits = phoneDigits(p);
-                if (pDigits.length < 10 || pDigits.length > 15) return;
-                partialFired = true;
-                trackEvent('call-page:partial-captured');
-                capturePartial();
-            }
-            ['name', 'email', 'phone', 'company', 'title'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company', 'title', 'linkedin'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
-                if (el) el.addEventListener('blur', maybeFirePartial);
+                if (el) el.addEventListener('blur', autosave);
             });
 
             form.addEventListener('submit', async function (e) {

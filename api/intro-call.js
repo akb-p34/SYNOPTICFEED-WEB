@@ -3,17 +3,24 @@ const { sendIntroCallNotification } = require('../lib/resend');
 
 const CALENDLY_BASE = 'https://calendly.com/akbar-pathan034/intro-call';
 
-const rateBuckets = new Map();
-const RATE_LIMIT = 5;
+// Per-field autosave makes the partial path hot — a normal form session can easily
+// produce 5-8 blur events. Complete stage stays tightly limited (it's the
+// brute-force risk surface that ships Resend notifications + real redirects).
+const rateBucketsPartial = new Map();
+const rateBucketsComplete = new Map();
+const RATE_LIMIT_PARTIAL = 20;
+const RATE_LIMIT_COMPLETE = 5;
 const RATE_WINDOW_MS = 60_000;
 
-function rateLimited(ip) {
+function rateLimited(ip, stage) {
+    const buckets = stage === 'partial' ? rateBucketsPartial : rateBucketsComplete;
+    const limit = stage === 'partial' ? RATE_LIMIT_PARTIAL : RATE_LIMIT_COMPLETE;
     const now = Date.now();
-    const bucket = rateBuckets.get(ip) || [];
+    const bucket = buckets.get(ip) || [];
     const fresh = bucket.filter(t => now - t < RATE_WINDOW_MS);
-    if (fresh.length >= RATE_LIMIT) return true;
+    if (fresh.length >= limit) return true;
     fresh.push(now);
-    rateBuckets.set(ip, fresh);
+    buckets.set(ip, fresh);
     return false;
 }
 
@@ -55,13 +62,13 @@ module.exports = async function handler(req, res) {
     }
 
     const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
-    if (rateLimited(ip)) {
+    const body = req.body || {};
+    const stage = body.stage === 'partial' ? 'partial' : 'complete';
+
+    if (rateLimited(ip, stage)) {
         res.status(429).json({ error: 'Too many requests' });
         return;
     }
-
-    const body = req.body || {};
-    const stage = body.stage === 'partial' ? 'partial' : 'complete';
 
     if (body.website || body.fax) {
         if (stage === 'partial') {
