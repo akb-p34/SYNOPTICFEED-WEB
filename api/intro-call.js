@@ -31,6 +31,15 @@ function cleanArray(arr, max = 20, itemMax = 80) {
     return arr.slice(0, max).map(v => clean(v, itemMax)).filter(Boolean);
 }
 
+// Returns the cleaned phone string if 10-15 digits (stripped), else empty string.
+function cleanPhone(s) {
+    const raw = clean(s, 32);
+    if (!raw) return '';
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 15) return '';
+    return raw;
+}
+
 function buildCalendlyUrl(name, email) {
     const params = new URLSearchParams();
     if (name) params.set('name', name);
@@ -67,40 +76,75 @@ module.exports = async function handler(req, res) {
     const name = clean(body.name, 120);
     const company = clean(body.company, 160);
     const title = clean(body.title, 120);
+    const phone = cleanPhone(body.phone);
+    const linkedin = clean(body.linkedin, 500);
     const isos = cleanArray(body.isos);
     const tradeTypes = cleanArray(body.trade_types);
     const weatherStack = cleanArray(body.weather_stack);
-    const linkedin = clean(body.linkedin, 500);
-    const eoi = Boolean(body.eoi);
+    const eoi = body.eoi === true;
 
-    const step1Invalid = !isValidEmail(email) || !name || !company || !title;
-    if (step1Invalid || (stage === 'complete' && !eoi)) {
+    // Email is required on every stage (it's the conflict key).
+    if (!isValidEmail(email)) {
         res.status(400).json({ error: 'Invalid input' });
         return;
     }
 
-    const baseEntry = {
-        email,
-        name,
-        company,
-        title,
-        linkedin: linkedin || null,
-        visitor_id: clean(body.visitor_id, 36) || null,
-        utm_source: clean(body.utm_source, 120) || null,
-        utm_medium: clean(body.utm_medium, 120) || null,
-        utm_campaign: clean(body.utm_campaign, 160) || null,
-        user_agent: clean(req.headers['user-agent'], 500),
-        source: clean(body.source, 40) || 'call-page',
-        stage
-    };
+    // Complete stage requires every contact field, a valid phone, and EOI.
+    if (stage === 'complete' && (!name || !company || !title || !phone || !eoi)) {
+        res.status(400).json({ error: 'Invalid input' });
+        return;
+    }
 
-    const entry = stage === 'complete'
-        ? { ...baseEntry, isos, trade_types: tradeTypes, weather_stack: weatherStack, eoi }
-        : { ...baseEntry, eoi };
+    let entry;
+    if (stage === 'complete') {
+        entry = {
+            email,
+            name,
+            company,
+            title,
+            phone,
+            linkedin: linkedin || null,
+            eoi: true,
+            isos,
+            trade_types: tradeTypes,
+            weather_stack: weatherStack,
+            visitor_id: clean(body.visitor_id, 36) || null,
+            utm_source: clean(body.utm_source, 120) || null,
+            utm_medium: clean(body.utm_medium, 120) || null,
+            utm_campaign: clean(body.utm_campaign, 160) || null,
+            user_agent: clean(req.headers['user-agent'], 500),
+            source: clean(body.source, 40) || 'call-page',
+            stage: 'complete'
+        };
+    } else {
+        // Overwrite-safe partial: only include fields with truthy values.
+        // Postgres UPSERT only touches columns that appear in the INSERT list,
+        // so omitted fields preserve whatever was already written on the row.
+        entry = { email, stage: 'partial' };
+        if (name) entry.name = name;
+        if (company) entry.company = company;
+        if (title) entry.title = title;
+        if (phone) entry.phone = phone;
+        if (linkedin) entry.linkedin = linkedin;
+        if (eoi === true) entry.eoi = true; // never downgrade to false
+        const vid = clean(body.visitor_id, 36);
+        if (vid) entry.visitor_id = vid;
+        const utmSource = clean(body.utm_source, 120);
+        if (utmSource) entry.utm_source = utmSource;
+        const utmMedium = clean(body.utm_medium, 120);
+        if (utmMedium) entry.utm_medium = utmMedium;
+        const utmCampaign = clean(body.utm_campaign, 160);
+        if (utmCampaign) entry.utm_campaign = utmCampaign;
+        const ua = clean(req.headers['user-agent'], 500);
+        if (ua) entry.user_agent = ua;
+        const src = clean(body.source, 40);
+        if (src) entry.source = src;
+    }
 
     if (stage === 'partial') {
         try {
             const sb = getClient();
+            // Guard: never regress a completed row to partial.
             const { data: existing, error: selectError } = await sb
                 .from('intro_call_requests')
                 .select('stage')
@@ -124,8 +168,8 @@ module.exports = async function handler(req, res) {
 
     const redirect = buildCalendlyUrl(name, email);
 
-    // Fail-soft: we care most about the Calendly redirect happening.
-    // If Supabase is down or the table doesn't exist yet, still notify and redirect.
+    // Fail-soft: the Calendly redirect is the most important thing.
+    // If Supabase is down, still notify and redirect.
     try {
         const sb = getClient();
         const { error: upsertError } = await sb

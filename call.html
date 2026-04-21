@@ -224,7 +224,7 @@
 
         /* Alarm-card mock on Step 2 — mirrors deck page 6 */
         .call-alarm-card {
-            margin: 0 0 28px;
+            margin: 44px 0 14px;
             border: 1px solid var(--call-border);
             border-radius: 12px;
             background: var(--call-surface);
@@ -335,26 +335,6 @@
         </section>
 
         <form id="call-form" novalidate>
-            <div class="call-alarm-card" aria-hidden="true">
-                <div class="call-alarm-chrome">
-                    <span class="call-alarm-dot"></span>
-                    <span class="call-alarm-dot"></span>
-                    <span class="call-alarm-dot"></span>
-                    <span class="call-alarm-url">synopticfeed.com &middot; alert dashboard</span>
-                </div>
-                <div class="call-alarm-body">
-                    <span class="call-alarm-tag">DIVERGENCE DETECTED</span>
-                    <h3>GFS under-forecasting cloud cover in PJM Western Hub.</h3>
-                    <p>Satellite deck is heavier than the 09:00 NWS run predicted. Day-ahead solar is over-forecast. Balancing exposure is up.</p>
-                    <div class="call-alarm-meta">
-                        <div><span class="k">CONFIDENCE</span><span class="v">HIGH</span></div>
-                        <div><span class="k">ZONE</span><span class="v">PJM WESTERN HUB</span></div>
-                        <div><span class="k">FIRED</span><span class="v">09:12 EDT</span></div>
-                    </div>
-                </div>
-            </div>
-            <p class="call-alarm-caption">A preview. This is what a live divergence looks like.</p>
-
             <label class="call-field" data-field="name" data-label="Full name">
                 <span class="label">Full name</span>
                 <input type="text" name="name" required autocomplete="name" maxlength="120" autofocus>
@@ -363,6 +343,11 @@
             <label class="call-field" data-field="email" data-label="Email">
                 <span class="label">Email</span>
                 <input type="email" name="email" required autocomplete="email" maxlength="254" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+            </label>
+
+            <label class="call-field" data-field="phone" data-label="Phone">
+                <span class="label">Phone</span>
+                <input type="tel" name="phone" required autocomplete="tel" maxlength="32" inputmode="tel" placeholder="+1 (555) 123-4567">
             </label>
 
             <label class="call-field" data-field="company" data-label="Company">
@@ -391,6 +376,26 @@
 
             <button type="submit" class="call-btn">Submit</button>
             <p class="call-error" data-error="main"></p>
+
+            <div class="call-alarm-card" aria-hidden="true">
+                <div class="call-alarm-chrome">
+                    <span class="call-alarm-dot"></span>
+                    <span class="call-alarm-dot"></span>
+                    <span class="call-alarm-dot"></span>
+                    <span class="call-alarm-url">synopticfeed.com &middot; alert dashboard</span>
+                </div>
+                <div class="call-alarm-body">
+                    <span class="call-alarm-tag">DIVERGENCE DETECTED</span>
+                    <h3>GFS under-forecasting cloud cover in PJM Western Hub.</h3>
+                    <p>Satellite deck is heavier than the 09:00 NWS run predicted. Day-ahead solar is over-forecast. Balancing exposure is up.</p>
+                    <div class="call-alarm-meta">
+                        <div><span class="k">CONFIDENCE</span><span class="v">HIGH</span></div>
+                        <div><span class="k">ZONE</span><span class="v">PJM WESTERN HUB</span></div>
+                        <div><span class="k">FIRED</span><span class="v">09:12 EDT</span></div>
+                    </div>
+                </div>
+            </div>
+            <p class="call-alarm-caption">A preview. This is what a live divergence looks like.</p>
         </form>
     </div>
 
@@ -456,15 +461,23 @@
                 }
             }
 
+            function phoneDigits(raw) {
+                return String(raw || '').replace(/\D/g, '');
+            }
+
             function validateForm() {
                 var failed = [];
-                ['name', 'email', 'company', 'title'].forEach(function (n) {
+                ['name', 'email', 'phone', 'company', 'title'].forEach(function (n) {
                     var input = form.elements[n];
                     if (!input || !input.value.trim()) failed.push(n);
                 });
                 if (failed.indexOf('email') === -1) {
                     var emailVal = form.elements.email.value.trim();
                     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) failed.push('email');
+                }
+                if (failed.indexOf('phone') === -1) {
+                    var pDigits = phoneDigits(form.elements.phone.value);
+                    if (pDigits.length < 10 || pDigits.length > 15) failed.push('phone');
                 }
                 if (!form.elements.eoi.checked) failed.push('eoi');
                 return failed;
@@ -474,7 +487,7 @@
 
             // First-focus tracking for inputs
             var focusFired = {};
-            ['name', 'email', 'company', 'title', 'linkedin'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company', 'title', 'linkedin'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
                 if (!el) return;
                 el.addEventListener('focus', function () {
@@ -503,26 +516,40 @@
             });
 
             // Clear field errors on input
-            ['name', 'email', 'company', 'title'].forEach(function (n) {
+            ['name', 'email', 'phone', 'company', 'title'].forEach(function (n) {
                 var el = form.elements[n];
                 if (el) el.addEventListener('input', function () { setFieldError(n, false); });
             });
 
+            // Overwrite-safe: only include fields with non-whitespace values.
+            // Omitted fields never replace existing DB values on the partial upsert.
             function capturePartial() {
                 try {
                     var fd = new FormData(form);
-                    var payload = {
-                        stage: 'partial',
-                        name: (fd.get('name') || '').trim(),
-                        email: (fd.get('email') || '').trim(),
-                        company: (fd.get('company') || '').trim(),
-                        title: (fd.get('title') || '').trim(),
-                        linkedin: (fd.get('linkedin') || '').trim(),
-                        eoi: !!fd.get('eoi'),
-                        visitor_id: getCookie('syf_visitor_id'),
-                        source: 'call-page',
-                        website: fd.get('website') || ''
-                    };
+                    var payload = { stage: 'partial' };
+
+                    function addIfFilled(key, raw) {
+                        if (raw === null || raw === undefined) return;
+                        var v = String(raw).trim();
+                        if (!v) return;
+                        payload[key] = v;
+                    }
+
+                    addIfFilled('name', fd.get('name'));
+                    addIfFilled('email', fd.get('email'));
+                    addIfFilled('phone', fd.get('phone'));
+                    addIfFilled('company', fd.get('company'));
+                    addIfFilled('title', fd.get('title'));
+                    addIfFilled('linkedin', fd.get('linkedin'));
+
+                    // EOI: only send when checked. Never downgrade a consented lead.
+                    if (fd.get('eoi')) payload.eoi = true;
+
+                    var vid = getCookie('syf_visitor_id');
+                    if (vid) payload.visitor_id = vid;
+                    payload.source = 'call-page';
+                    payload.website = fd.get('website') || '';
+
                     fetch('/api/intro-call', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -532,23 +559,26 @@
                 } catch (_) {}
             }
 
-            // Fire partial exactly once per page load, after all 4 required contact
-            // fields are filled and the email is valid. Covers "typed everything,
-            // never clicked submit" leads.
+            // Fire partial exactly once per page load, after all required contact
+            // fields are filled and both email + phone are valid. Covers the
+            // "typed everything, never clicked submit" lead.
             var partialFired = false;
             function maybeFirePartial() {
                 if (partialFired) return;
                 var n = (form.elements.name.value || '').trim();
                 var em = (form.elements.email.value || '').trim();
+                var p = (form.elements.phone.value || '').trim();
                 var c = (form.elements.company.value || '').trim();
                 var t = (form.elements.title.value || '').trim();
-                if (!n || !em || !c || !t) return;
+                if (!n || !em || !p || !c || !t) return;
                 if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return;
+                var pDigits = phoneDigits(p);
+                if (pDigits.length < 10 || pDigits.length > 15) return;
                 partialFired = true;
                 trackEvent('call-page:partial-captured');
                 capturePartial();
             }
-            ['name', 'email', 'company', 'title'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company', 'title'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
                 if (el) el.addEventListener('blur', maybeFirePartial);
             });
@@ -556,7 +586,7 @@
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 var failed = validateForm();
-                clearAllErrors(err, ['name', 'email', 'company', 'title', 'eoi']);
+                clearAllErrors(err, ['name', 'email', 'phone', 'company', 'title', 'eoi']);
                 if (failed.length) {
                     renderErrors(err, failed);
                     trackEvent('call-page:submit-validation-failed');
@@ -574,6 +604,7 @@
                     stage: 'complete',
                     name: (fd.get('name') || '').trim(),
                     email: (fd.get('email') || '').trim(),
+                    phone: (fd.get('phone') || '').trim(),
                     company: (fd.get('company') || '').trim(),
                     title: (fd.get('title') || '').trim(),
                     linkedin: (fd.get('linkedin') || '').trim(),
