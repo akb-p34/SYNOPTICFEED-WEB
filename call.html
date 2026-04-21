@@ -69,13 +69,6 @@
             margin: 0 0 48px;
             font-style: italic;
         }
-        .call-progress {
-            font-size: 13px;
-            letter-spacing: 0.14em;
-            color: var(--call-text-faint);
-            text-transform: uppercase;
-            margin: 0 0 28px;
-        }
         .call-field {
             display: block;
             margin: 0 0 28px;
@@ -108,41 +101,6 @@
         .call-field input:focus {
             border-color: var(--call-border-focus);
             box-shadow: 0 0 0 3px var(--call-accent-glow);
-        }
-        .call-choices {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .call-choice {
-            display: flex;
-            align-items: center;
-            font-size: 18px;
-            padding: 16px 18px;
-            border: 2px solid var(--call-border);
-            background: var(--call-surface);
-            color: var(--call-text);
-            border-radius: 10px;
-            cursor: pointer;
-            min-height: 58px;
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            transition: border-color 150ms var(--ease), background-color 150ms var(--ease);
-        }
-        .call-choice:hover {
-            border-color: rgba(255, 120, 0, 0.4);
-        }
-        .call-choice input {
-            margin: 0 14px 0 0;
-            width: 22px;
-            height: 22px;
-            accent-color: var(--call-accent);
-            flex-shrink: 0;
-        }
-        .call-choice:has(input:checked) {
-            border-color: var(--call-accent);
-            background: var(--call-surface-alt);
         }
         .call-eoi {
             display: flex;
@@ -198,17 +156,6 @@
             color: var(--call-accent);
         }
         .call-btn:active { transform: translateY(1px); }
-        .call-btn-secondary {
-            background: transparent;
-            color: var(--call-text-dim);
-            border: 2px solid var(--call-border);
-            margin-top: 12px;
-        }
-        .call-btn-secondary:hover {
-            background: transparent;
-            color: var(--call-text);
-            border-color: var(--call-text-dim);
-        }
         .call-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
         .call-btn[disabled]:hover {
             background: var(--call-accent);
@@ -232,7 +179,6 @@
             .call-hero .sub { font-size: 19px; }
             .call-hero .time { font-size: 17px; margin-bottom: 40px; }
             .call-field > span.label { font-size: 18px; }
-            .call-choice { font-size: 17px; }
         }
 
         /* Error state: specific field outlined in red */
@@ -249,64 +195,26 @@
             color: var(--call-danger);
         }
 
-        /* "All of the above" choice — subtle differentiation, same height */
-        .call-choice-all {
-            border-style: dashed;
-            opacity: 0.92;
-        }
-        .call-choice-all:has(input:checked) {
-            border-style: solid;
-        }
-
-        /* Reveal-on-check text input for "Other" */
-        .call-other-input {
-            width: 100%;
-            box-sizing: border-box;
-            font-family: inherit;
-            font-size: 18px;
-            padding: 14px 18px;
-            margin-top: 10px;
-            border: 2px solid var(--call-border);
-            background: var(--call-surface);
-            color: var(--call-text);
-            border-radius: 10px;
-            outline: none;
-            -webkit-appearance: none;
-            appearance: none;
-            transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease), opacity 200ms var(--ease);
-            animation: callFadeUp 200ms var(--ease) both;
-        }
-        .call-other-input:focus {
-            border-color: var(--call-border-focus);
-            box-shadow: 0 0 0 3px var(--call-accent-glow);
-        }
-
-        /* Light entry + step transitions */
+        /* Light entry animation */
         @keyframes callFadeUp {
             from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
         }
         .call-brand,
         .call-hero,
-        #call-page-1 {
+        #call-form {
             animation: callFadeUp 260ms var(--ease) both;
         }
         .call-hero { animation-delay: 60ms; }
-        #call-page-1 { animation-delay: 120ms; }
-
-        .call-page.is-entering {
-            animation: callFadeUp 220ms var(--ease) both;
-        }
+        #call-form { animation-delay: 120ms; }
 
         @media (prefers-reduced-motion: reduce) {
             .call-brand,
             .call-hero,
-            #call-page-1,
-            .call-page.is-entering {
+            #call-form {
                 animation: none;
             }
             .call-btn,
-            .call-choice,
             .call-eoi,
             .call-field input,
             .call-brand {
@@ -407,17 +315,6 @@
             margin: 12px 0 0;
             font-style: italic;
         }
-        .call-step2-intro {
-            font-size: 14px;
-            color: var(--call-text-dim);
-            margin: 0 0 20px;
-        }
-        .call-hint {
-            color: var(--call-text-faint);
-            font-weight: 400;
-            font-size: 13px;
-            margin-left: 6px;
-        }
         @media (max-width: 480px) {
             .call-alarm-body { padding: 18px 16px 16px; }
             .call-alarm-body h3 { font-size: 18px; }
@@ -438,121 +335,62 @@
         </section>
 
         <form id="call-form" novalidate>
-            <section id="call-page-1" class="call-page">
-                <p class="call-progress">Step 1 of 2</p>
-
-                <label class="call-field" data-field="name" data-label="Full name">
-                    <span class="label">Full name</span>
-                    <input type="text" name="name" required autocomplete="name" maxlength="120" autofocus>
-                </label>
-
-                <label class="call-field" data-field="email" data-label="Email">
-                    <span class="label">Email</span>
-                    <input type="email" name="email" required autocomplete="email" maxlength="254" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
-                </label>
-
-                <label class="call-field" data-field="company" data-label="Company">
-                    <span class="label">Company</span>
-                    <input type="text" name="company" required autocomplete="organization" maxlength="160">
-                </label>
-
-                <label class="call-field" data-field="title" data-label="Title / role">
-                    <span class="label">Title / role</span>
-                    <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
-                </label>
-
-                <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
-                    <input type="checkbox" name="eoi" required>
-                    <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
-                </label>
-
-                <button type="button" class="call-btn" data-next>Next &rarr;</button>
-                <p class="call-error" data-error="1"></p>
-            </section>
-
-            <section id="call-page-2" class="call-page" hidden>
-                <p class="call-progress">Step 2 of 2</p>
-
-                <div class="call-alarm-card" aria-hidden="true">
-                    <div class="call-alarm-chrome">
-                        <span class="call-alarm-dot"></span>
-                        <span class="call-alarm-dot"></span>
-                        <span class="call-alarm-dot"></span>
-                        <span class="call-alarm-url">synopticfeed.com &middot; alert dashboard</span>
-                    </div>
-                    <div class="call-alarm-body">
-                        <span class="call-alarm-tag">DIVERGENCE DETECTED</span>
-                        <h3>GFS under-forecasting cloud cover in PJM Western Hub.</h3>
-                        <p>Satellite deck is heavier than the 09:00 NWS run predicted. Day-ahead solar is over-forecast. Balancing exposure is up.</p>
-                        <div class="call-alarm-meta">
-                            <div><span class="k">CONFIDENCE</span><span class="v">HIGH</span></div>
-                            <div><span class="k">ZONE</span><span class="v">PJM WESTERN HUB</span></div>
-                            <div><span class="k">FIRED</span><span class="v">09:12 EDT</span></div>
-                        </div>
+            <div class="call-alarm-card" aria-hidden="true">
+                <div class="call-alarm-chrome">
+                    <span class="call-alarm-dot"></span>
+                    <span class="call-alarm-dot"></span>
+                    <span class="call-alarm-dot"></span>
+                    <span class="call-alarm-url">synopticfeed.com &middot; alert dashboard</span>
+                </div>
+                <div class="call-alarm-body">
+                    <span class="call-alarm-tag">DIVERGENCE DETECTED</span>
+                    <h3>GFS under-forecasting cloud cover in PJM Western Hub.</h3>
+                    <p>Satellite deck is heavier than the 09:00 NWS run predicted. Day-ahead solar is over-forecast. Balancing exposure is up.</p>
+                    <div class="call-alarm-meta">
+                        <div><span class="k">CONFIDENCE</span><span class="v">HIGH</span></div>
+                        <div><span class="k">ZONE</span><span class="v">PJM WESTERN HUB</span></div>
+                        <div><span class="k">FIRED</span><span class="v">09:12 EDT</span></div>
                     </div>
                 </div>
-                <p class="call-alarm-caption">A preview. This is what a live divergence looks like.</p>
+            </div>
+            <p class="call-alarm-caption">A preview. This is what a live divergence looks like.</p>
 
-                <p class="call-step2-intro">Help us prep for your call &mdash; all optional below.</p>
+            <label class="call-field" data-field="name" data-label="Full name">
+                <span class="label">Full name</span>
+                <input type="text" name="name" required autocomplete="name" maxlength="120" autofocus>
+            </label>
 
-                <div class="call-field" data-field="isos" data-label="ISO regions">
-                    <span class="label">Which ISOs does your desk trade? <span class="call-hint">(optional)</span></span>
-                    <div class="call-choices">
-                        <label class="call-choice call-choice-all"><input type="checkbox" data-all-for="isos"> All of the above</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="PJM"> PJM</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="ERCOT"> ERCOT</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="CAISO"> CAISO</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="ISO-NE"> ISO-NE</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="MISO"> MISO</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="NYISO"> NYISO</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="SPP"> SPP</label>
-                        <label class="call-choice"><input type="checkbox" name="isos" value="Other" data-other="isos"> Other</label>
-                    </div>
-                    <input type="text" class="call-other-input" name="isos_other" data-other-input="isos" placeholder="Which other ISO(s)?" maxlength="120" hidden>
-                </div>
+            <label class="call-field" data-field="email" data-label="Email">
+                <span class="label">Email</span>
+                <input type="email" name="email" required autocomplete="email" maxlength="254" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+            </label>
 
-                <div class="call-field" data-field="trade_types" data-label="What your desk trades">
-                    <span class="label">What does your desk trade? <span class="call-hint">(optional)</span></span>
-                    <div class="call-choices">
-                        <label class="call-choice call-choice-all"><input type="radio" name="trade_types" value="All of the above"> All of the above</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="Day-ahead spot"> Day-ahead spot</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="Real-time spot"> Real-time spot</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="Futures"> Futures</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="FTR / congestion"> FTR / congestion</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="Long-term portfolio"> Long-term portfolio</label>
-                        <label class="call-choice"><input type="radio" name="trade_types" value="Other" data-other="trade_types"> Other</label>
-                    </div>
-                    <input type="text" class="call-other-input" name="trade_types_other" data-other-input="trade_types" placeholder="What do you trade?" maxlength="120" hidden>
-                </div>
+            <label class="call-field" data-field="company" data-label="Company">
+                <span class="label">Company</span>
+                <input type="text" name="company" required autocomplete="organization" maxlength="160">
+            </label>
 
-                <div class="call-field" data-field="weather_stack" data-label="Weather stack">
-                    <span class="label">How does weather data get to your desk today? <span class="call-hint">(optional)</span></span>
-                    <div class="call-choices">
-                        <label class="call-choice call-choice-all"><input type="checkbox" data-all-for="weather_stack"> All of the above</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="NWS / NOAA"> NWS / NOAA public feeds</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="DTN"> DTN / Frontier Weather</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="CWG"> Commodity Weather Group</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Tomorrow.io"> Tomorrow.io / Climavision</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="AccuWeather"> AccuWeather</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Internal met team"> Internal meteorology team</label>
-                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Other" data-other="weather_stack"> Other</label>
-                    </div>
-                    <input type="text" class="call-other-input" name="weather_stack_other" data-other-input="weather_stack" placeholder="Which other source(s)?" maxlength="120" hidden>
-                </div>
+            <label class="call-field" data-field="title" data-label="Title / role">
+                <span class="label">Title / role</span>
+                <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
+            </label>
 
-                <label class="call-field">
-                    <span class="label">LinkedIn <span style="color: var(--call-text-faint); font-weight: 400;">(optional)</span></span>
-                    <input type="url" name="linkedin" placeholder="linkedin.com/in/..." maxlength="500" autocapitalize="none" autocorrect="off" spellcheck="false">
-                </label>
+            <label class="call-field">
+                <span class="label">LinkedIn <span style="color: var(--call-text-faint); font-weight: 400;">(optional)</span></span>
+                <input type="url" name="linkedin" placeholder="linkedin.com/in/..." maxlength="500" autocapitalize="none" autocorrect="off" spellcheck="false">
+            </label>
 
-                <div class="call-hp" aria-hidden="true">
-                    <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
-                </div>
+            <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
+                <input type="checkbox" name="eoi" required>
+                <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
+            </label>
 
-                <button type="submit" class="call-btn">Book my call &rarr;</button>
-                <button type="button" class="call-btn call-btn-secondary" data-back>&larr; Back</button>
-                <p class="call-error" data-error="2"></p>
-            </section>
+            <div class="call-hp" aria-hidden="true">
+                <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+
+            <button type="submit" class="call-btn">Submit</button>
+            <p class="call-error" data-error="main"></p>
         </form>
     </div>
 
@@ -562,12 +400,7 @@
         (function () {
             const CALENDLY_BASE = 'https://calendly.com/akbar-pathan034/intro-call';
             const form = document.getElementById('call-form');
-            const page1 = document.getElementById('call-page-1');
-            const page2 = document.getElementById('call-page-2');
-            const nextBtn = form.querySelector('[data-next]');
-            const backBtn = form.querySelector('[data-back]');
-            const err1 = form.querySelector('[data-error="1"]');
-            const err2 = form.querySelector('[data-error="2"]');
+            const err = form.querySelector('[data-error="main"]');
 
             function getCookie(name) {
                 const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]+)'));
@@ -623,7 +456,7 @@
                 }
             }
 
-            function validatePage1() {
+            function validateForm() {
                 var failed = [];
                 ['name', 'email', 'company', 'title'].forEach(function (n) {
                     var input = form.elements[n];
@@ -637,29 +470,9 @@
                 return failed;
             }
 
-            function validatePage2() {
-                return [];
-            }
-
             trackEvent('call-page:loaded');
 
-            function slug(s) {
-                return String(s || '')
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, '-')
-                    .replace(/^-+|-+$/g, '')
-                    .slice(0, 28);
-            }
-
-            function showStep(stepEl) {
-                stepEl.hidden = false;
-                stepEl.classList.remove('is-entering');
-                // force reflow then re-add so the animation replays
-                void stepEl.offsetWidth;
-                stepEl.classList.add('is-entering');
-            }
-
-            // First-focus tracking for Step 1 inputs + LinkedIn
+            // First-focus tracking for inputs
             var focusFired = {};
             ['name', 'email', 'company', 'title', 'linkedin'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
@@ -681,96 +494,15 @@
                 });
             }
 
-            // "All of the above" <-> individual checkboxes two-way sync.
-            // Excludes the "Other" option — "Other" is a placeholder for free-text,
-            // not a real choice, so "All of the above" shouldn't touch it.
-            function realItems(groupName) {
-                return Array.prototype.filter.call(
-                    form.querySelectorAll('input[name="' + groupName + '"]'),
-                    function (i) { return !i.hasAttribute('data-other'); }
-                );
-            }
-
-            function syncAllToggle(groupName) {
-                var allEl = form.querySelector('[data-all-for="' + groupName + '"]');
-                if (!allEl) return;
-                var items = realItems(groupName);
-                if (!items.length) return;
-                var checkedCount = 0;
-                items.forEach(function (i) { if (i.checked) checkedCount++; });
-                allEl.checked = checkedCount > 0 && checkedCount === items.length;
-            }
-
-            function toggleAll(groupName, checked) {
-                realItems(groupName).forEach(function (i) {
-                    if (i.checked !== checked) {
-                        i.checked = checked;
-                        // fire change events so dependent UI (tracking, error-clear) stays in sync
-                        i.dispatchEvent(new Event('change', { bubbles: true }));
-                    }
-                });
-            }
-
-            // "Other" text field reveal
-            function toggleOtherInput(groupName, visible) {
-                var input = form.querySelector('[data-other-input="' + groupName + '"]');
-                if (!input) return;
-                input.hidden = !visible;
-                if (visible) {
-                    setTimeout(function () { input.focus(); }, 30);
-                } else {
-                    input.value = '';
-                }
-            }
-
-            // Centralized change handler: all-toggle, other-reveal, tracking, error-clear
+            // EOI tracking + error clear on change
             form.addEventListener('change', function (e) {
                 var input = e.target;
-                if (!input) return;
-
-                // "All of the above" toggling (checkboxes only — radios handle themselves)
-                var allFor = input.getAttribute && input.getAttribute('data-all-for');
-                if (allFor) {
-                    toggleAll(allFor, input.checked);
-                    // If All is on and Other is auto-checked, show its text input too
-                    var otherEl = form.querySelector('[data-other="' + allFor + '"]');
-                    if (otherEl) toggleOtherInput(allFor, otherEl.checked);
-                    return;
-                }
-
-                // Individual choice → may need to sync "All of the above"
-                if (input.name) {
-                    syncAllToggle(input.name);
-                }
-
-                // "Other" checkbox/radio → reveal text field
-                var otherGroup = input.getAttribute && input.getAttribute('data-other');
-                if (otherGroup) {
-                    toggleOtherInput(otherGroup, !!input.checked);
-                }
-
-                // When a radio in trade_types changes, handle Other visibility too
-                if (input.type === 'radio' && input.name === 'trade_types') {
-                    toggleOtherInput('trade_types', input.value === 'Other');
-                }
-
-                // Tracking + error clearing
-                if (input.name === 'isos') {
-                    if (input.checked) trackEvent('call:choice:iso-' + slug(input.value));
-                    setFieldError('isos', false);
-                } else if (input.name === 'trade_types') {
-                    if (input.checked) trackEvent('call:choice:trade-' + slug(input.value));
-                    setFieldError('trade_types', false);
-                } else if (input.name === 'weather_stack') {
-                    if (input.checked) trackEvent('call:choice:weather-' + slug(input.value));
-                    setFieldError('weather_stack', false);
-                } else if (input.name === 'eoi') {
-                    trackEvent('call:choice:eoi-' + (input.checked ? 'on' : 'off'));
-                    setFieldError('eoi', false);
-                }
+                if (!input || input.name !== 'eoi') return;
+                trackEvent('call:choice:eoi-' + (input.checked ? 'on' : 'off'));
+                setFieldError('eoi', false);
             });
 
-            // Clear Step-1 errors on input
+            // Clear field errors on input
             ['name', 'email', 'company', 'title'].forEach(function (n) {
                 var el = form.elements[n];
                 if (el) el.addEventListener('input', function () { setFieldError(n, false); });
@@ -800,34 +532,33 @@
                 } catch (_) {}
             }
 
-            nextBtn.addEventListener('click', function () {
-                var failed = validatePage1();
-                clearAllErrors(err1, ['name', 'email', 'company', 'title', 'eoi']);
-                if (failed.length) {
-                    renderErrors(err1, failed);
-                    trackEvent('call-page:next-validation-failed');
-                    return;
-                }
+            // Fire partial exactly once per page load, after all 4 required contact
+            // fields are filled and the email is valid. Covers "typed everything,
+            // never clicked submit" leads.
+            var partialFired = false;
+            function maybeFirePartial() {
+                if (partialFired) return;
+                var n = (form.elements.name.value || '').trim();
+                var em = (form.elements.email.value || '').trim();
+                var c = (form.elements.company.value || '').trim();
+                var t = (form.elements.title.value || '').trim();
+                if (!n || !em || !c || !t) return;
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return;
+                partialFired = true;
+                trackEvent('call-page:partial-captured');
                 capturePartial();
-                trackEvent('call-page:advance-to-step-2');
-                page1.hidden = true;
-                showStep(page2);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-
-            backBtn.addEventListener('click', function () {
-                trackEvent('call-page:back-to-step-1');
-                page2.hidden = true;
-                showStep(page1);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            ['name', 'email', 'company', 'title'].forEach(function (fieldName) {
+                var el = form.elements[fieldName];
+                if (el) el.addEventListener('blur', maybeFirePartial);
             });
 
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
-                var failed = validatePage2();
-                clearAllErrors(err2, ['isos', 'trade_types', 'weather_stack']);
+                var failed = validateForm();
+                clearAllErrors(err, ['name', 'email', 'company', 'title', 'eoi']);
                 if (failed.length) {
-                    renderErrors(err2, failed);
+                    renderErrors(err, failed);
                     trackEvent('call-page:submit-validation-failed');
                     return;
                 }
@@ -839,33 +570,17 @@
 
                 const fd = new FormData(form);
 
-                // Merge "Other" free-text into the relevant array in place of "Other".
-                // For trade_types (single value), replace "Other" with the text.
-                function mergeOther(values, otherText) {
-                    var t = (otherText || '').trim();
-                    if (!t) return values;
-                    return values.map(function (v) { return v === 'Other' ? ('Other: ' + t) : v; });
-                }
-
-                var isos = mergeOther(fd.getAll('isos'), fd.get('isos_other'));
-                var tradeTypesRaw = fd.getAll('trade_types');
-                var tradeOther = (fd.get('trade_types_other') || '').trim();
-                var tradeTypes = tradeTypesRaw.map(function (v) {
-                    return v === 'Other' && tradeOther ? ('Other: ' + tradeOther) : v;
-                });
-                var weatherStack = mergeOther(fd.getAll('weather_stack'), fd.get('weather_stack_other'));
-
                 const payload = {
                     stage: 'complete',
                     name: (fd.get('name') || '').trim(),
                     email: (fd.get('email') || '').trim(),
                     company: (fd.get('company') || '').trim(),
                     title: (fd.get('title') || '').trim(),
-                    isos: isos,
-                    trade_types: tradeTypes,
-                    weather_stack: weatherStack,
                     linkedin: (fd.get('linkedin') || '').trim(),
                     eoi: !!fd.get('eoi'),
+                    isos: [],
+                    trade_types: [],
+                    weather_stack: [],
                     visitor_id: getCookie('syf_visitor_id'),
                     source: 'call-page',
                     website: fd.get('website') || ''
@@ -885,7 +600,7 @@
                     const data = await res.json().catch(() => ({}));
                     trackEvent('call-page:submit-completed');
                     window.location.href = data.redirect || fallbackUrl;
-                } catch (err) {
+                } catch (_err) {
                     trackEvent('call-page:submit-network-error');
                     window.location.href = fallbackUrl;
                 }
