@@ -1,7 +1,7 @@
 <footer class="crt-boot">
     <div class="footer-content">
         <div class="footer-section footer-brand">
-            <a href="/" class="footer-logo">
+            <a href="/" class="footer-logo" data-track="footer:brand:home">
                 <img src="assets/WhiteHorizontalLogo.svg" alt="SYNOPTICFEED">
             </a>
             <p class="footer-brand-tag">Satellite verification for power trading desks.</p>
@@ -9,16 +9,16 @@
         <div class="footer-section">
             <h4>EXPLORE</h4>
             <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/how-it-works">How It Works</a></li>
-                <li><a href="/pricing">Pricing</a></li>
+                <li><a href="/" data-track="footer:explore:home">Home</a></li>
+                <li><a href="/how-it-works" data-track="footer:explore:how-it-works">How It Works</a></li>
+                <li><a href="/call" data-track="footer:explore:book-call">Book A Call</a></li>
             </ul>
         </div>
         <div class="footer-section">
             <h4>ACCESS</h4>
             <ul>
                 <li><a href="#" data-popup-trigger="footer-access">Get Founding Access</a></li>
-                <li><a href="https://www.linkedin.com/company/synopticfeed/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+                <li><a href="https://www.linkedin.com/company/synopticfeed/" target="_blank" rel="noopener noreferrer" data-track="footer:social:linkedin">LinkedIn</a></li>
                 <li><a href="#" data-popup-trigger="footer-contact">Contact Us</a></li>
             </ul>
         </div>
@@ -36,5 +36,6 @@
 <script defer src="/_vercel/speed-insights/script.js"></script>
 <script src="animations.js" defer></script>
 <script src="tracker.js" defer></script>
+<script src="analytics.js" defer></script>
 <script src="popup.js" defer></script>
 <script src="cookie-banner.js" defer></script>

@@ -104,11 +104,13 @@
 
         if (!body.name || !body.email || !body.company) {
             showError('All fields required.');
+            trackClick('popup:form:submit-missing-fields');
             return;
         }
 
         var btn = form.querySelector('button[type="submit"]');
         if (btn) { btn.disabled = true; btn.textContent = 'SENDING...'; }
+        trackClick('popup:form:submit-started');
 
         fetch('/api/subscribe', {
             method: 'POST',
@@ -119,10 +121,27 @@
             return r.json();
         }).then(function () {
             setCookie(SEEN_COOKIE, '1', 365);
+            trackClick('popup:form:submit-success');
             showSuccess();
         }).catch(function () {
             showError('Something went wrong. Try again or email akbar@synopticfeed.com.');
+            trackClick('popup:form:submit-error');
             if (btn) { btn.disabled = false; btn.textContent = 'REQUEST ACCESS'; }
+        });
+    }
+
+    function wireFocusTracking() {
+        if (!form) return;
+        var fieldNames = ['name', 'email', 'company'];
+        var focused = {};
+        fieldNames.forEach(function (n) {
+            var el = form.querySelector('input[name="' + n + '"]');
+            if (!el) return;
+            el.addEventListener('focus', function () {
+                if (focused[n]) return;
+                focused[n] = true;
+                trackClick('popup:form:focus-' + n);
+            });
         });
     }
 
@@ -202,6 +221,7 @@
         if (form) form.addEventListener('submit', handleSubmit);
 
         wireTriggers();
+        wireFocusTracking();
         armAutoTrigger();
     }
 

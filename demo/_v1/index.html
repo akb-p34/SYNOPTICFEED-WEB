@@ -1,0 +1,1648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>SynopticFeed Terminal</title>
+<meta name="viewport" content="width=1440"/>
+<link rel="stylesheet" href="styles.css?v=8"/>
+<script src="data.js"></script>
+<script src="map.js?v=3"></script>
+<script src="hero-map.js?v=2"></script>
+<script src="chart.js?v=2"></script>
+</head>
+<body>
+<div class="terminal" id="app" data-screen-label="SF Terminal">
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand" id="brand-home" role="button" title="Back to Map" style="cursor:pointer">
+      <img src="assets/WhiteHorizontalLogo.png" alt="SynopticFeed" style="height:22px;width:auto;display:block"/>
+    </div>
+    <div class="topnav" id="topnav">
+      <button data-screen="main" class="active">Map</button>
+      <button data-screen="detail">Alarm Detail</button>
+      <button data-screen="archive">Archive</button>
+      <button data-screen="settings">Settings</button>
+    </div>
+    <div class="topmeta">
+      <span><span class="dot"></span>SATELLITE LIVE · GOES-16/18</span>
+      <span>UPDATED <span class="val sync-val" id="last-sync">7 SEC</span> AGO</span>
+      <span>SIGNED IN · <span class="val">J. CARTER</span></span>
+    </div>
+  </div>
+
+  <!-- Ticker -->
+  <div class="ticker">
+    <div class="ticker-label">LIVE</div>
+    <div class="ticker-track" id="ticker"></div>
+  </div>
+
+  <!-- Screens mount here -->
+  <div id="screens" style="min-height:0;overflow:hidden;"></div>
+
+</div>
+
+<!-- Action modal — fake processing→result→savings sequence for REBALANCE NOW -->
+<div class="modal-backdrop" id="rebalance-modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal-panel">
+    <div class="modal-head" id="modal-head-text">REBALANCE</div>
+    <div class="modal-body">
+      <div class="modal-step" data-step="processing">
+        <div class="modal-spinner"></div>
+        <div class="step-title" id="proc-title">Analyzing current exposure</div>
+        <div class="step-body" id="proc-body"></div>
+      </div>
+      <div class="modal-step" data-step="result">
+        <div class="step-title">Rebalance confirmed</div>
+        <div class="step-body" id="result-body"></div>
+        <ul class="step-reasons" id="result-reasons"></ul>
+      </div>
+      <div class="modal-step" data-step="savings">
+        <div class="step-savings">ESTIMATED LOSS AVOIDED</div>
+        <div class="step-savings-num step-glow" id="savings-num"></div>
+        <div class="step-body" id="savings-body"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-primary" id="modal-done" style="display:none">DONE</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const DATA = window.SF_DATA;
+  const screensEl = document.getElementById('screens');
+  const app = document.getElementById('app');
+
+  // ---------- State ----------
+  let state = {
+    screen: 'main',
+    selectedISO: null,
+    openAlert: null,
+    scrubIdx: 22,   // hovers exactly at the alarm-fire timestamp
+    chartKey: 'ERCOT_HOUSTON',  // which forecast-vs-actual curve to render
+    detailTarget: DATA.drill,
+    archiveFilter: { iso: 'ALL', conf: 'ALL', q: '' },
+    settingsTab: 'iso',
+    settings: {
+      isoEnabled: { CAISO: true, SPP: true, ERCOT: true, MISO: true, PJM: true, NYISO: true, "ISO-NE": true },
+      thresholds: {
+        cloud: 15, temp: 3.0, wind: 20, load: 5
+      },
+      channels: {
+        terminal: true,
+        email: true,
+        sms: true,
+        webhook: false,
+        bloomberg: false
+      }
+    }
+  };
+
+  // ---------- Utilities ----------
+  const fmtUSD = (n) => {
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    if (abs >= 1_000_000) return `${sign}$${(abs/1_000_000).toFixed(2)}M`;
+    if (abs >= 1_000) return `${sign}$${(abs/1_000).toFixed(1)}K`;
+    return `${sign}$${abs.toFixed(0)}`;
+  };
+  const fmtSigned = (n) => (n > 0 ? '+' : '') + fmtUSD(n);
+
+  function renderTicker() {
+    const tk = document.getElementById('ticker');
+    const items = [
+      { l: "PJM RT LMP", v: "$54.12", c: "up", d: "+1.8%" },
+      { l: "ERCOT HB_N", v: "$38.91", c: "down", d: "-4.2%" },
+      { l: "CAISO SP15", v: "$61.40", c: "up", d: "+0.6%" },
+      { l: "MISO IND-HUB", v: "$42.33", c: "neu", d: "0.0%" },
+      { l: "NYISO ZONE-J", v: "$59.88", c: "down", d: "-1.1%" },
+      { l: "GOES-16 OBS", v: "8:52:31 AM CT", c: "neu", d: "LIVE" },
+      { l: "NWS", v: "91% ACC", c: "up", d: "+2.1" },
+      { l: "GFS ERCOT", v: "63% ACC", c: "down", d: "-7.4" },
+      { l: "CWG PJM", v: "68% ACC", c: "down", d: "-5.2" },
+      { l: "DTN MISO", v: "79% ACC", c: "neu", d: "-0.3" },
+      { l: "ACTIVE ALARMS", v: "7", c: "down", d: "▲2" },
+      { l: "EXPOSURE", v: "$2.41M", c: "down", d: "▲$0.6M" }
+    ];
+    const block = items.map(i => `
+      <span class="ticker-item"><b>${i.l}</b>${i.v} <span class="${i.c}">${i.d}</span></span>
+    `).join('');
+    tk.innerHTML = block + block;
+  }
+
+  function setScreen(name) {
+    // Cancel any ongoing Detail-report timers when navigating away so we don't leak interval work.
+    if (state.screen === 'detail' && name !== 'detail' && typeof clearDetailTimers === 'function') {
+      clearDetailTimers();
+    }
+    state.screen = name;
+    document.querySelectorAll('.topnav button').forEach(b => {
+      b.classList.toggle('active', b.dataset.screen === name);
+    });
+    render();
+  }
+
+  // ---------- MAIN SCREEN ----------
+  function renderMain() {
+    screensEl.innerHTML = `
+      <div class="screen" data-screen-label="01 Primary">
+        <!-- Map -->
+        <div class="panel mappanel">
+          <div class="panel-head">
+            <span class="title">US POWER GRIDS</span>
+            <span class="meta">7 REGIONS · LIVE FROM SATELLITE</span>
+            <span class="spacer"></span>
+            <button class="scenario-nav scenario-prev" data-scn="prev" aria-label="Previous scenario">◄</button>
+            <span class="pill on">LIVE</span>
+            <button class="scenario-nav scenario-next" data-scn="next" aria-label="Next scenario">►</button>
+          </div>
+          <div class="panel-body" style="padding:0;min-height:0;flex:1;display:flex;overflow:hidden">
+            <div id="hero-map-mount" style="flex:1;min-height:0;min-width:0;position:relative;overflow:hidden"></div>
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div class="panel alertspanel">
+          <div class="panel-head">
+            <span class="title">ACTIVE ALARMS</span>
+            <span class="meta" id="alert-panel-meta">MONITORING…</span>
+          </div>
+          <div class="main-action-strip" id="main-action-strip" data-nav="detail">
+            <div class="mas-head">
+              <span class="mas-label">ANOMALY DETECTED</span>
+              <span class="mas-body" id="mas-body-text">Satellite caught a divergence in the forecast. We're still protecting the details.</span>
+              <span class="mas-cta">INVESTIGATE →</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="alert-list" id="alert-list"></div>
+          </div>
+        </div>
+
+        <!-- Positions -->
+        <div class="panel positions">
+          <div class="panel-head">
+            <span class="title">YOUR CONTRACTS</span>
+            <span class="meta">Live P&amp;L vs. projected returns</span>
+          </div>
+          <div class="panel-body">
+            <div class="pos-summary">
+              <div>
+                <div class="k">LIVE P&amp;L · on the books</div>
+                <div class="v" id="pos-mtm">—</div>
+              </div>
+              <div>
+                <div class="k">POWER AT RISK</div>
+                <div class="v" id="pos-power">—</div>
+              </div>
+              <div>
+                <div class="k">PROJECTED RETURNS</div>
+                <div class="v" id="pos-worst">—</div>
+              </div>
+            </div>
+            <table class="pos-table">
+              <thead>
+                <tr>
+                  <th>Contract</th><th>Hours</th><th class="num">MW</th>
+                  <th class="num">Mark</th><th class="num">P&L</th><th>Exposure</th>
+                </tr>
+              </thead>
+              <tbody id="pos-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="panel chartpanel">
+          <div class="panel-head">
+            <span class="title" id="chart-title">FORECAST vs REALITY</span>
+            <span class="meta" id="chart-sub">Last 4 hours · Houston zone</span>
+            <span class="spacer"></span>
+            <span class="pill on" id="chart-pill">ALARM RANG 8:50 AM CT</span>
+          </div>
+          <div class="chart-head">
+            <div class="legend">
+              <span class="lg"><i class="sw" style="background:var(--fg-mute); border-top: 1px dashed var(--fg-mute); height: 0;"></i>PREDICTED</span>
+              <span class="lg"><i class="sw" style="background:var(--accent)"></i>ACTUAL</span>
+            </div>
+            <div class="readout" id="chart-readout"></div>
+          </div>
+          <div class="chart-stage" id="chart-stage"></div>
+          <div class="chart-hover-tip" id="chart-hover-tip" aria-hidden="true"></div>
+        </div>
+      </div>
+    `;
+
+    // Wire up hero map + ISO tooltip + click-to-detail routing.
+    let onScenarioDelayTimer = null;
+    if (window.SF_HEROMAP) {
+      const heroMount = document.getElementById('hero-map-mount');
+      SF_HEROMAP.mount(heroMount, {
+        onScenario: (sc, i) => {
+          const t = document.getElementById('chart-title');
+          const s = document.getElementById('chart-sub');
+          const p = document.getElementById('chart-pill');
+          if (t && sc.chart) t.textContent = sc.chart.title;
+          if (s && sc.chart) s.textContent = sc.chart.sub;
+          if (p && sc.chart) p.textContent = sc.chart.pill;
+          // Status-bar scenario counter — updates with each nav.
+          const scIdx = document.getElementById('sb-scenario-idx');
+          if (scIdx) scIdx.textContent = String((i || 0) + 1);
+          // Suggestion strip copy + drill target update immediately so click routing is correct.
+          renderSuggestionForScenario(sc.key);
+          if (sc.key && DATA.drills && DATA.drills[sc.key]) state.detailTarget = DATA.drills[sc.key];
+          if (sc.key) state.chartKey = sc.key;
+          // The alarms/money/chart panels hold off 2s after the map lights up — the scenario has
+          // "started" but the data feed takes a beat to catch up, which reads more believable.
+          if (onScenarioDelayTimer) clearTimeout(onScenarioDelayTimer);
+          onScenarioDelayTimer = setTimeout(() => {
+            renderAlarmsForScenario(sc.key);
+            renderMoneyAtRiskForScenario(sc.key);
+            state.scrubIdx = 22;
+            renderChartOnce();
+          }, 2000);
+        }
+      });
+      // ISO tooltip — floating div that follows the cursor while over a region.
+      const ISO_NAMES = {
+        CAISO: 'California', SPP: 'Great Plains', ERCOT: 'Texas grid',
+        MISO: 'Midwest', PJM: 'Mid-Atlantic', NYISO: 'New York', 'ISO-NE': 'New England'
+      };
+      const STATUS_LABEL = { green: 'MATCH · no action needed', yellow: 'DRIFTING · watching', red: 'ALARM · active' };
+      const ISO_TO_DRILL_KEY = {
+        ERCOT: 'ERCOT_HOUSTON', PJM: 'PJM_DOM', MISO: 'MISO_CENTRAL',
+        CAISO: 'CAISO_SP15', SPP: null, NYISO: null, 'ISO-NE': null
+      };
+      let tip = heroMount.querySelector('.iso-tooltip');
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.className = 'iso-tooltip';
+        heroMount.appendChild(tip);
+      }
+      heroMount.addEventListener('mousemove', (e) => {
+        const group = e.target.closest('[data-iso]');
+        if (!group) { tip.classList.remove('show'); return; }
+        const iso = group.getAttribute('data-iso');
+        const fill = group.querySelector('.iso-fill');
+        const status = (fill && fill.getAttribute('data-status')) || 'green';
+        const name = ISO_NAMES[iso] || iso;
+        tip.innerHTML = `<b>${iso}</b> · ${name}<br><span class="status-${status}">${STATUS_LABEL[status]}</span>`;
+        const r = heroMount.getBoundingClientRect();
+        const x = Math.min(r.width - 180, Math.max(0, e.clientX - r.left + 12));
+        const y = Math.min(r.height - 70, Math.max(0, e.clientY - r.top + 12));
+        tip.style.left = x + 'px';
+        tip.style.top  = y + 'px';
+        tip.classList.add('show');
+      });
+      heroMount.addEventListener('mouseleave', () => tip.classList.remove('show'));
+      heroMount.addEventListener('click', (e) => {
+        const group = e.target.closest('[data-iso]');
+        if (!group) return;
+        const iso = group.getAttribute('data-iso');
+        const key = ISO_TO_DRILL_KEY[iso];
+        if (key && DATA.drills && DATA.drills[key]) {
+          state.detailTarget = DATA.drills[key];
+          setScreen('detail');
+        }
+      });
+    }
+
+    // Main-screen SUGGESTION strip → navigates to the CURRENT scenario's detail (set by onScenario).
+    // Reveal is driven by renderAlarmsForScenario (after the red primary alarm shows).
+    const mainStrip = document.querySelector('.main-action-strip');
+    if (mainStrip) {
+      mainStrip.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'mas-btn') return; // button has its own handler
+        const key = mainStrip.dataset.drillKey || 'ERCOT_HOUSTON';
+        state.detailTarget = (DATA.drills && DATA.drills[key]) || DATA.drill;
+        setScreen('detail');
+      });
+    }
+    const masBtn = document.getElementById('mas-btn');
+    if (masBtn) masBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = (mainStrip && mainStrip.dataset.drillKey) || 'ERCOT_HOUSTON';
+      state.detailTarget = (DATA.drills && DATA.drills[key]) || DATA.drill;
+      openRebalanceModal();
+    });
+
+    // Scenario nav arrows — dispatch a custom event the hero-map listens for.
+    const heroMountEl = document.getElementById('hero-map-mount');
+    document.querySelectorAll('.scenario-nav').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dir = btn.dataset.scn;
+        if (!heroMountEl) return;
+        heroMountEl.dispatchEvent(new CustomEvent('scenario-go', { detail: { dir } }));
+      });
+    });
+
+    // Brand / logo click → go home to Map and reset the report narrative.
+    const brandEl = document.getElementById('brand-home');
+    if (brandEl) brandEl.addEventListener('click', () => {
+      state.detailTarget = (DATA.drills && DATA.drills.ERCOT_HOUSTON) || DATA.drill;
+      state.openAlert = null;
+      setScreen('main');
+    });
+
+    // Alerts list shows a generic "monitoring this zone" placeholder until the first alarm fires.
+    const list = document.getElementById('alert-list');
+    list.textContent = '';
+    const placeholder = document.createElement('div');
+    placeholder.className = 'alert-placeholder';
+    placeholder.innerHTML = '';
+    const p1 = document.createElement('div'); p1.className = 'ap-dot';
+    const p2 = document.createElement('div'); p2.className = 'ap-body';
+    const p2a = document.createElement('div'); p2a.className = 'ap-title'; p2a.textContent = 'Monitoring Houston · ERCOT';
+    const p2b = document.createElement('div'); p2b.className = 'ap-note'; p2b.textContent = 'All positions in tolerance. Satellite feed live.';
+    p2.appendChild(p2a); p2.appendChild(p2b);
+    placeholder.appendChild(p1); placeholder.appendChild(p2);
+    list.appendChild(placeholder);
+    // Scenario → alarms routing. Each scenario surfaces exactly one ACTIVE alarm + one WATCH.
+    // Prevents the "alarms from 7 different storms at the same time" problem.
+    const SCENARIO_ALARMS = {
+      ERCOT_HOUSTON: ['SF-24A71', 'SF-24A60'],
+      PJM_DOM:       ['SF-24A68', 'SF-24A66'],  // Dominion + AEP watch (both PJM)
+      ERCOT_NORTH:   ['SF-24A60', 'SF-24A71'],
+      CAISO_SP15:    ['SF-24A65', 'SF-24A60'],  // SP15 + ERCOT North watch
+      MISO_CENTRAL:  ['SF-24A66', 'SF-24A62']
+    };
+    // Per-scenario "anomaly detected" copy — invites investigation; no trade prescription on Main.
+    const SCENARIO_SUGGESTIONS = {
+      ERCOT_HOUSTON: { zone: 'HOUSTON, TX',     note: "Satellite shows clouds 34% thicker than forecast. Day-ahead solar positions may be exposed." },
+      PJM_DOM:       { zone: 'DOMINION · PJM',  note: "Temperature running 4.2°F colder than forecast. Load schedule may be under-covered." },
+      ERCOT_NORTH:   { zone: 'NORTH TEXAS',     note: "Wind running 9% above forecast. Short wind positions may be exposed." },
+      CAISO_SP15:    { zone: 'SOUTHERN CAL',    note: "Marine layer holding past burn-off. SP15 solar ramp is slow." },
+      MISO_CENTRAL:  { zone: 'MIDWEST · MISO',  note: "Thunderstorms arriving ~4 hours early. Wind and temperature positions at risk." }
+    };
+    // Re-render the "Your Money at Risk" summary + table with the current scenario's contracts.
+    function fmtSignedK(n) {
+      const abs = Math.abs(n);
+      if (abs >= 1e6) return (n < 0 ? '−$' : '+$') + (abs / 1e6).toFixed(2) + 'M';
+      if (abs >= 1e3) return (n < 0 ? '−$' : '+$') + (abs / 1e3).toFixed(1) + 'K';
+      return (n < 0 ? '−$' : '+$') + abs;
+    }
+    // Money at Risk has two stages so a trader sees P&L WORSEN as the alarm fires:
+    //   - 'pre':  positions exist, P&L is ~25% of final (mild exposure, before the divergence confirms)
+    //   - 'post': alarm fires → P&L jumps to full impact with a red flash
+    let moneyAtRiskPostTimer = null;
+    function renderMoneyAtRiskForScenario(key, stage) {
+      stage = stage || 'pre';
+      const drill = (DATA.drills && DATA.drills[key]) || DATA.drill;
+      if (!drill || !drill.contracts) return;
+      const factor = stage === 'post' ? 1 : 0.25;
+      const contracts = drill.contracts;
+      const mtmEl = document.getElementById('pos-mtm');
+      const powerEl = document.getElementById('pos-power');
+      const worstEl = document.getElementById('pos-worst');
+      const totalMW = contracts.reduce((s, c) => s + c.mw, 0);
+      // Live P&L = what the trader's BOOKS show right now. It's lagged — the market hasn't
+      // repriced the anomaly yet — so it stays positive and only drifts down mildly.
+      const liveBase = totalMW * 1.4 * 1000; // rough "booked carry" baseline in $
+      const livePnl = stage === 'post' ? liveBase * 0.55 : liveBase * 0.92;
+      // Projected Returns = our forecast of where the P&L will land once the market
+      // reprices. Starts small-positive, flips negative when the alarm fires.
+      const projectedImpact = contracts.reduce((s, c) => s + c.impact, 0);
+      const projected = stage === 'post'
+        ? projectedImpact  // full negative once the storm confirms
+        : Math.round(liveBase * 0.35);  // small positive before confirmation
+      if (mtmEl)   {
+        mtmEl.textContent = (livePnl >= 0 ? '+$' : '−$') + Math.round(Math.abs(livePnl) / 1000) + 'K';
+        mtmEl.classList.remove('red'); mtmEl.classList.add('green');
+        flashCell(mtmEl);
+      }
+      if (powerEl) { powerEl.textContent = totalMW + ' MW'; flashCell(powerEl); }
+      if (worstEl) {
+        worstEl.textContent = fmtSignedK(projected);
+        worstEl.classList.remove('green', 'red');
+        worstEl.classList.add(projected >= 0 ? 'green' : 'red');
+        flashCell(worstEl);
+      }
+
+      if (stage === 'pre') {
+        if (moneyAtRiskPostTimer) clearTimeout(moneyAtRiskPostTimer);
+        moneyAtRiskPostTimer = setTimeout(() => renderMoneyAtRiskForScenario(key, 'post'), 19000);
+      }
+      // Rebuild the position table to show this scenario's contracts.
+      const posBody = document.getElementById('pos-body');
+      if (!posBody) return;
+      posBody.textContent = '';
+      contracts.forEach(c => {
+        // Pre-alarm: contracts show as HEALTHY / profitable (small positive carry). Post-alarm:
+        // contracts flip to their projected full-impact loss.
+        const scaledImpact = stage === 'post' ? c.impact : (c.mw * 2000);
+        // Exposure badge: pre-alarm everything reads as LOW / healthy (no red markings). Post-alarm
+        // the real worst-case band kicks in (high / med / low based on projected impact).
+        const band = stage === 'post'
+          ? (c.impact < -500000 ? 'high' : (c.impact < -100000 ? 'med' : 'low'))
+          : 'low';
+        const tr = document.createElement('tr');
+        tr.className = 'exposed-' + band;
+        // 1) Contract (id + LONG/SHORT subtitle)
+        const td1 = document.createElement('td');
+        const idDiv = document.createElement('div'); idDiv.style.fontWeight = '700'; idDiv.textContent = c.id;
+        const subDiv = document.createElement('div');
+        subDiv.style.cssText = 'font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg-mute)';
+        subDiv.textContent = (c.impact < 0 ? 'LONG' : 'SHORT');
+        td1.appendChild(idDiv); td1.appendChild(subDiv);
+        // 2) Hours
+        const td2 = document.createElement('td');
+        td2.style.cssText = 'font-size:10px;color:var(--fg-dim)';
+        td2.textContent = c.hr;
+        // 3) MW
+        const td3 = document.createElement('td'); td3.className = 'num'; td3.textContent = c.mw;
+        // 4) Mark
+        const td4 = document.createElement('td'); td4.className = 'num'; td4.textContent = '$' + c.mark.toFixed(2);
+        // 5) P&L — scales from 25% (pre) to 100% (post) so the trader sees losses deepen as the alarm fires.
+        const td5 = document.createElement('td');
+        td5.className = 'num ' + (scaledImpact < 0 ? 'pnl-down' : 'pnl-up');
+        td5.textContent = fmtSignedK(scaledImpact);
+        if (stage === 'post') { td5.classList.remove('tick'); void td5.offsetWidth; td5.classList.add('tick'); }
+        // 6) Exposure badge — pre-alarm reads "HEALTHY", post-alarm reads the real risk tier.
+        const td6 = document.createElement('td');
+        const expSpan = document.createElement('span');
+        expSpan.className = 'expo ' + band;
+        if (stage === 'post') {
+          expSpan.textContent = band === 'high' ? 'HIGH' : (band === 'med' ? 'MED' : 'LOW');
+        } else {
+          expSpan.textContent = 'HEALTHY';
+        }
+        td6.appendChild(expSpan);
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6);
+        posBody.appendChild(tr);
+      });
+    }
+
+    function renderSuggestionForScenario(key) {
+      const strip = document.getElementById('main-action-strip');
+      const body  = document.getElementById('mas-body-text');
+      if (!strip || !body) return;
+      const s = SCENARIO_SUGGESTIONS[key] || SCENARIO_SUGGESTIONS.ERCOT_HOUSTON;
+      body.textContent = '';
+      const b = document.createElement('b');
+      b.textContent = s.zone;
+      body.appendChild(b);
+      body.appendChild(document.createTextNode(' · ' + s.note));
+      strip.dataset.drillKey = key || 'ERCOT_HOUSTON';
+    }
+    let alarmRevealTimers = [];
+    function cancelAlarmReveals() {
+      alarmRevealTimers.forEach(id => clearTimeout(id));
+      alarmRevealTimers = [];
+    }
+    function tsMinutes(ts) {
+      const m = (ts || '').match(/^(\d+):(\d+)\s*(AM|PM)/i);
+      if (!m) return 0;
+      let h = parseInt(m[1], 10);
+      const mm = parseInt(m[2], 10);
+      const pm = m[3].toUpperCase() === 'PM';
+      if (h === 12) h = 0;
+      if (pm) h += 12;
+      return h * 60 + mm;
+    }
+    function buildAlarmRow(a, role) {
+      // role: 'primary' keeps the alarm's sev; 'watch' forces yellow + WATCH tag.
+      const sev = role === 'primary' ? a.sev : 'yellow';
+      const conf = role === 'primary' ? a.confidence : 'WATCH';
+      const row = document.createElement('div');
+      row.className = `alert-row sev-${sev} alert-reveal` + (state.openAlert === a.id ? ' open' : '');
+      row.dataset.id = a.id;
+      // Build children via DOM to avoid HTML string construction
+      const ts = document.createElement('div');   ts.className = 'alert-ts';   ts.textContent = a.ts.replace('Z','');
+      const body = document.createElement('div'); body.className = 'alert-body';
+      const hdr = document.createElement('div');  hdr.className = 'hdr';
+      const zone = document.createElement('span'); zone.className = 'zone'; zone.textContent = a.zone;
+      hdr.appendChild(zone);
+      const detail = document.createElement('div'); detail.className = 'detail'; detail.textContent = a.metric;
+      body.appendChild(hdr); body.appendChild(detail);
+      const tag = document.createElement('div'); tag.className = `conf-tag ${conf.toLowerCase()}`; tag.textContent = conf;
+      row.appendChild(ts); row.appendChild(body); row.appendChild(tag);
+      row.addEventListener('click', () => {
+        state.openAlert = row.dataset.id;
+        const dk = ALERT_TO_DRILL[row.dataset.id];
+        if (dk && DATA.drills && DATA.drills[dk]) state.detailTarget = DATA.drills[dk];
+        else state.detailTarget = DATA.drill;
+        setScreen('detail');
+      });
+      return row;
+    }
+    function renderAlarmsForScenario(key) {
+      cancelAlarmReveals();
+      // Hide the suggestion strip immediately — it will re-reveal after the red primary lands.
+      const strip0 = document.getElementById('main-action-strip');
+      if (strip0) strip0.classList.remove('visible');
+      const ids = SCENARIO_ALARMS[key] || SCENARIO_ALARMS.ERCOT_HOUSTON;
+      const primaryId = ids[0];
+      const items = ids.map(id => DATA.alerts.find(a => a.id === id)).filter(Boolean);
+      const host = document.getElementById('alert-list');
+      if (!host) return;
+      host.innerHTML = '';
+      // Swap the panel meta to reflect actual scenario counts, not the stale "X RINGING · POLL 5s".
+      const meta = document.getElementById('alert-panel-meta');
+      if (meta) meta.textContent = items.length >= 2 ? '1 ACTIVE · 1 WATCHING' : '1 ACTIVE';
+      // Sort by timestamp — older first so it lands at the bottom, newer lands on top and pushes it down.
+      const sorted = items.slice().sort((a, b) => tsMinutes(a.ts) - tsMinutes(b.ts));
+      const older = sorted[0];
+      const newer = sorted[sorted.length - 1];
+      const roleOf = (a) => (a && a.id === primaryId) ? 'primary' : 'watch';
+      // Timing is synced to the forecast-vs-reality chart sweep (chart starts 2s after scenario,
+      // alarm-fire pill at ~48% of the 40s cycle). renderAlarmsForScenario is called at scenario+2s
+      // (inside the 2s delay block), so:
+      //   - older row at  10000ms from call  → scenario + 12s  (matches hero-map yellow)
+      //   - newer row at  19000ms from call  → scenario + 21s  (matches hero-map red + chart alarm pill)
+      alarmRevealTimers.push(setTimeout(() => {
+        if (older) {
+          const row = buildAlarmRow(older, roleOf(older));
+          host.appendChild(row);
+          requestAnimationFrame(() => row.classList.add('in'));
+        }
+      }, 10000));
+      alarmRevealTimers.push(setTimeout(() => {
+        if (!newer || newer === older) return;
+        const row = buildAlarmRow(newer, roleOf(newer));
+        host.insertBefore(row, host.firstChild);
+        requestAnimationFrame(() => row.classList.add('in'));
+        // Suggestion strip follows the red primary by ~1.5s — call-to-action after the alarm rings.
+        alarmRevealTimers.push(setTimeout(() => {
+          const strip = document.getElementById('main-action-strip');
+          if (strip && state.screen === 'main') strip.classList.add('visible');
+        }, 1500));
+      }, 19000));
+    }
+
+    // Alert-ID → drill-key routing. Multiple alerts may point at the same scenario.
+    const ALERT_TO_DRILL = {
+      'SF-24A71': 'ERCOT_HOUSTON',
+      'SF-24A68': 'PJM_DOM',
+      'SF-24A66': 'MISO_CENTRAL',
+      'SF-24A65': 'CAISO_SP15',
+      'SF-24A62': 'MISO_CENTRAL',
+      'SF-24A60': 'ERCOT_NORTH',
+      'SF-24A58': 'ERCOT_HOUSTON'
+    };
+    list.querySelectorAll('.alert-row').forEach(r => {
+      r.addEventListener('click', () => {
+        state.openAlert = r.dataset.id;
+        const key = ALERT_TO_DRILL[r.dataset.id];
+        if (key && DATA.drills && DATA.drills[key]) state.detailTarget = DATA.drills[key];
+        else state.detailTarget = DATA.drill;
+        setScreen('detail');
+      });
+    });
+
+    // Positions table populates immediately in 'pre' (monitoring) mode with healthy P&L values —
+    // the Houston contracts exist whether an alarm is firing or not. renderMoneyAtRiskForScenario
+    // is re-called when onScenario fires to confirm the state.
+    const posBody = document.getElementById('pos-body');
+    if (posBody) posBody.textContent = '';
+    renderMoneyAtRiskForScenario('ERCOT_HOUSTON', 'pre');
+    // Render the static forecast line + empty chart stage so the curve is visible as we monitor.
+    renderChartOnce();
+
+    // Chart
+    // Chart does not render yet — waits for onScenario to fire after the 5s monitoring pre-roll.
+    window.removeEventListener('resize', renderChartOnce);
+    window.addEventListener('resize', renderChartOnce);
+  }
+
+  function renderChartOnce() {
+    const stage = document.getElementById('chart-stage');
+    if (!stage) return;
+    const chartData = (DATA.charts && DATA.charts[state.chartKey]) || DATA.chart;
+    SF_CHART.render(stage, {
+      data: chartData,
+      times: DATA.chartTimes,
+      scrubIdx: state.scrubIdx,
+      onScrub: (idx) => { state.scrubIdx = idx; renderChartOnce(); }
+    });
+    startChartReadoutSweep();
+    wireChartHover();
+  }
+
+  // Advance the chart readout in lockstep with the CSS obs-sweep animation.
+  // The sweep draws 0→100% of the path across 0→85% of a 40s cycle; after that it holds.
+  let chartReadoutInterval = null;
+  let chartReadoutStart = 0;
+  function updateChartReadout(data, times, idx) {
+    const ro = document.getElementById('chart-readout');
+    if (!ro) return;
+    const point = data[idx];
+    if (!point) return;
+    const dp = Math.round(((point.obs - point.forecast) / point.forecast) * 100);
+    const cls = Math.abs(dp) >= 10 ? 'orange' : '';
+    // Build via DOM to avoid innerHTML XSS hook.
+    ro.textContent = '';
+    const rows = [
+      { k: 'Time',     v: times[idx],               vc: '' },
+      { k: 'Forecast', v: point.forecast + ' MW',   vc: '' },
+      { k: 'Observed', v: point.obs + ' MW',        vc: 'orange' },
+      { k: 'Gap',      v: (dp > 0 ? '+' : '') + dp + '%', vc: cls }
+    ];
+    rows.forEach(r => {
+      const wrap = document.createElement('span');
+      const k = document.createElement('span'); k.className = 'k'; k.textContent = r.k;
+      const v = document.createElement('span'); v.className = 'v ' + r.vc; v.textContent = r.v;
+      wrap.appendChild(k);
+      wrap.appendChild(document.createTextNode(' '));
+      wrap.appendChild(v);
+      ro.appendChild(wrap);
+    });
+  }
+  function startChartReadoutSweep() {
+    if (chartReadoutInterval) { clearInterval(chartReadoutInterval); chartReadoutInterval = null; }
+    chartReadoutStart = Date.now();
+    const SWEEP_MS = 40000;
+    const DRAW_FRAC = 0.85; // matches keyframe — obs line completes at 85% of the 40s cycle
+    const chartData = (DATA.charts && DATA.charts[state.chartKey]) || DATA.chart;
+    const times = DATA.chartTimes;
+    const lastIdx = chartData.length - 1;
+    // Initial paint at idx 0 so the readout is meaningful immediately.
+    updateChartReadout(chartData, times, 0);
+    // Belt-and-suspenders: when the CSS sweep animation ENDS on the obs path,
+    // hard-stop the readout so stats freeze the moment the orange line hits NOW.
+    const obs = document.querySelector('#chart-stage .chart-obs-sweep');
+    if (obs) {
+      const stopHandler = () => {
+        if (chartReadoutInterval) { clearInterval(chartReadoutInterval); chartReadoutInterval = null; }
+        updateChartReadout(chartData, times, lastIdx);
+        const drill = (DATA.drills && DATA.drills[state.chartKey]) || DATA.drill;
+        if (drill) updateProjectedReturns(drill, 1);
+      };
+      obs.addEventListener('animationend', stopHandler, { once: true });
+    }
+    chartReadoutInterval = setInterval(() => {
+      const elapsed = Date.now() - chartReadoutStart;
+      const progress = Math.min(1, elapsed / SWEEP_MS);
+      const drawProgress = Math.min(1, progress / DRAW_FRAC);
+      // Stop the instant the orange line reaches the right edge. Render the final snapshot ONCE
+      // (no more tick animations) then clear the interval.
+      if (drawProgress >= 1) {
+        clearInterval(chartReadoutInterval); chartReadoutInterval = null;
+        updateChartReadout(chartData, times, lastIdx);
+        const drill = (DATA.drills && DATA.drills[state.chartKey]) || DATA.drill;
+        if (drill) updateProjectedReturns(drill, 1);
+        return;
+      }
+      const idx = Math.min(lastIdx, Math.floor(drawProgress * lastIdx));
+      updateChartReadout(chartData, times, idx);
+      // Projected Returns degrades continuously with the widening gap. Live P&L handled separately.
+      const drill = (DATA.drills && DATA.drills[state.chartKey]) || DATA.drill;
+      if (drill) updateProjectedReturns(drill, drawProgress);
+    }, 180);
+  }
+
+  // Chart hover tooltip — follows the mouse along the curve, shows the closest data point's time + values.
+  function wireChartHover() {
+    const stage = document.getElementById('chart-stage');
+    const tip = document.getElementById('chart-hover-tip');
+    if (!stage || !tip || stage._hoverWired) return;
+    stage._hoverWired = true;
+    const PAD_LEFT = 52, PAD_RIGHT = 20;
+    stage.addEventListener('mousemove', (e) => {
+      const rect = stage.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (x < PAD_LEFT || x > rect.width - PAD_RIGHT) { tip.classList.remove('show'); return; }
+      const innerW = rect.width - PAD_LEFT - PAD_RIGHT;
+      const data = (DATA.charts && DATA.charts[state.chartKey]) || DATA.chart;
+      const times = DATA.chartTimes;
+      const ratio = (x - PAD_LEFT) / innerW;
+      const idx = Math.max(0, Math.min(data.length - 1, Math.round(ratio * (data.length - 1))));
+      const p = data[idx];
+      if (!p) { tip.classList.remove('show'); return; }
+      // Only show when the cursor is near one of the curves (within ~32px vertically).
+      const PAD_TOP = 18, PAD_BOTTOM = 26, minY = 200, maxY = 1200;
+      const innerH = rect.height - PAD_TOP - PAD_BOTTOM;
+      const forecastY = PAD_TOP + (1 - (p.forecast - minY) / (maxY - minY)) * innerH;
+      const obsY      = PAD_TOP + (1 - (p.obs - minY)      / (maxY - minY)) * innerH;
+      const THRESH = 32;
+      const nearForecast = Math.abs(y - forecastY) <= THRESH;
+      const nearObs      = Math.abs(y - obsY) <= THRESH;
+      if (!nearForecast && !nearObs) { tip.classList.remove('show'); return; }
+      const dp = Math.round(((p.obs - p.forecast) / p.forecast) * 100);
+      tip.textContent = '';
+      // Within a small window around the alarm-fire index (22), surface the warning banner.
+      const alarmIdx = 22;
+      const nearAlarm = Math.abs(idx - alarmIdx) <= 1;
+      if (nearAlarm) {
+        const hdr = document.createElement('div');
+        hdr.className = 'hover-alarm';
+        hdr.textContent = '⚠ ALARM FIRED · ' + times[alarmIdx];
+        tip.appendChild(hdr);
+        const msg = document.createElement('div');
+        msg.className = 'hover-alarm-msg';
+        msg.textContent = 'Gap breached the divergence threshold. Forecast and actual diverged beyond our tolerance for more than 10 minutes.';
+        tip.appendChild(msg);
+      }
+      const rows = [
+        ['TIME', times[idx]],
+        ['PREDICTED', p.forecast + ' MW'],
+        ['ACTUAL',    p.obs + ' MW'],
+        ['GAP',       (dp > 0 ? '+' : '') + dp + '%']
+      ];
+      rows.forEach(r => {
+        const row = document.createElement('div'); row.className = 'hover-row';
+        const k = document.createElement('span'); k.textContent = r[0];
+        const v = document.createElement('b');    v.textContent = r[1];
+        row.appendChild(k); row.appendChild(v);
+        tip.appendChild(row);
+      });
+      const tipX = Math.min(rect.width - 160, x + 12);
+      const tipY = Math.max(10, Math.min(rect.height - 70, e.clientY - rect.top));
+      tip.style.left = tipX + 'px';
+      tip.style.top  = tipY + 'px';
+      tip.classList.add('show');
+    });
+    stage.addEventListener('mouseleave', () => tip.classList.remove('show'));
+  }
+
+  // Continuously update Projected Returns from small-positive to full-negative as the gap widens.
+  // Interpolates linearly against the chart sweep progress.
+  // Inline signed-dollar formatter so this function doesn't depend on fmtSignedK (scope issue).
+  function fmtSignedDollars(n) {
+    const abs = Math.abs(n);
+    const sign = n < 0 ? '−$' : '+$';
+    if (abs >= 1e6) return sign + (abs / 1e6).toFixed(2) + 'M';
+    if (abs >= 1e3) return sign + (abs / 1e3).toFixed(1) + 'K';
+    return sign + Math.round(abs);
+  }
+  function updateProjectedReturns(drill, drawProgress) {
+    const worstEl = document.getElementById('pos-worst');
+    if (!worstEl || !drill || !drill.contracts) return;
+    // Phase model the trader actually feels:
+    //   monitoring → lucrative flat positive
+    //   watch (yellow)  → slow drift down, still positive
+    //   alarm (red)      → sharp crash through zero into the projected loss
+    const startPositive = 340000;           // "lucrative" baseline during monitoring
+    const WATCH_P = 15 / 48;                 // ≈ 0.31, matches watch vertical line
+    const ALARM_P = 22 / 48;                 // ≈ 0.46, matches alarm vertical line
+    const fullImpact = drill.contracts.reduce((s, c) => s + c.impact, 0);
+    let current;
+    if (drawProgress < WATCH_P) {
+      current = startPositive;
+    } else if (drawProgress < ALARM_P) {
+      const phase = (drawProgress - WATCH_P) / (ALARM_P - WATCH_P);
+      current = startPositive * (1 - 0.35 * phase);   // drift down ~35% during watch window
+    } else {
+      const phase = (drawProgress - ALARM_P) / (1 - ALARM_P);
+      const startOfCrash = startPositive * 0.65;
+      current = startOfCrash + (fullImpact - startOfCrash) * phase;
+    }
+    worstEl.textContent = fmtSignedDollars(current);
+    worstEl.classList.remove('green', 'red');
+    worstEl.classList.add(current >= 0 ? 'green' : 'red');
+  }
+
+  // ---------- DETAIL SCREEN ----------
+  function renderDetail() {
+    const d = state.detailTarget;
+    screensEl.innerHTML = `
+      <div class="detail" data-screen-label="02 Alarm Detail">
+        <div class="detail-head">
+          <div>
+            <div class="crumbs">
+              <a data-nav="main">MAP</a>
+              <span class="sep">/</span>
+              <span>${(d.breadcrumbs && d.breadcrumbs.region) || 'TEXAS GRID'}</span>
+              <span class="sep">/</span>
+              <span>${(d.breadcrumbs && d.breadcrumbs.zone) || 'HOUSTON'}</span>
+              <span class="sep">/</span>
+              <span style="color:var(--fg)">ALARM ${d.id.replace('SF-','#')}</span>
+            </div>
+            <h1>${d.title.includes('—') ? `${d.title.split('—')[0]}<em>— ${d.title.split('—')[1]}</em>` : d.title.includes(':') ? `${d.title.split(':')[0]}:<em>${d.title.split(':').slice(1).join(':')}</em>` : d.title}</h1>
+          </div>
+          <div></div>
+          <div class="facts">
+            <div><span class="k">LAST UPDATE</span><span class="v">${d.fired}</span></div>
+            <div><span class="k">FORECASTER</span><span class="v">${d.vendor}</span></div>
+            <div><span class="k">HOW SURE</span><span class="v">${d.confidence}</span></div>
+            <div><span class="k">OFF BY</span><span class="v red">${d.divergence}</span></div>
+            <div><span class="k">$ AT RISK</span><span class="v red">${d.exposure}</span></div>
+          </div>
+        </div>
+
+        <div class="detail-hero">
+          <span class="detail-hero-text" id="detail-hero-text"></span><span class="detail-hero-caret"></span>
+        </div>
+
+        <div class="panel" style="grid-column: 1; grid-row: 3;">
+          <div class="panel-head">
+            <span class="title">EVENT TIMELINE</span>
+            <span class="meta">8:12 → 8:51 AM CT</span>
+          </div>
+          <div class="panel-body">
+            <div class="timeline" id="detail-timeline">
+              ${d.timeline.map((_,i) => `<div class="tl-slot" data-slot="${i}"></div>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="detail-right">
+        <div class="panel">
+          <div class="panel-head">
+            <span class="title">CONTRACT IMPACT</span>
+            <span class="meta">MARK vs. EXPECTED</span>
+          </div>
+          <div class="panel-body">
+            <table class="impact-table">
+              <thead>
+                <tr>
+                  <th>CONTRACT</th>
+                  <th class="num">MW</th>
+                  <th class="num">MARK</th>
+                  <th class="num">EXPECTED</th>
+                  <th class="num">IMPACT</th>
+                </tr>
+              </thead>
+              <tbody id="impact-body">
+                ${d.contracts.map((c,i) => `
+                  <tr class="impact-row" data-row="${i}">
+                    <td><b>${c.id}</b><br><span style="font-size:9px;color:var(--fg-mute);letter-spacing:.08em">${c.hr}</span></td>
+                    <td class="num impact-mw">—</td>
+                    <td class="num impact-mark">—</td>
+                    <td class="num impact-exp">—</td>
+                    <td class="num impact-val">—</td>
+                  </tr>
+                `).join('')}
+                <tr class="total" id="impact-total">
+                  <td>NET</td><td></td><td></td><td></td>
+                  <td class="num red impact-net">—</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="action-block" id="action-block">
+              <div class="action-generating" id="action-generating">
+                <div class="modal-spinner"></div>
+                <div class="generating-text">GENERATING RECOMMENDATION…</div>
+                <div class="generating-sub" id="generating-sub">Running 24 vendor models against the live satellite feed…</div>
+              </div>
+              <div class="action-revealed" id="action-revealed" style="display:none">
+                <div class="action-heading">WHAT TO DO</div>
+                <div class="action-body" id="action-body-text"></div>
+                <div class="action-eli5" id="action-eli5"><em></em></div>
+                <div class="action-buttons" id="action-buttons" style="opacity:0;pointer-events:none;transition:opacity 320ms ease">
+                  <button class="btn-primary" data-action="rebalance">REBALANCE NOW</button>
+                  <button class="btn-secondary" data-action="defer">REVIEW LATER</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <span class="title">FORECAST QUALITY</span>
+            <span class="meta">VENDOR SCORES · HOUSTON ZONE · LAST 4 HRS</span>
+          </div>
+          <div class="panel-body quality-body">
+            ${[
+              {v:"ECMWF", label:"Best today",             score: 9.0, band:"good"},
+              {v:"NWS",   label:"Reliable",               score: 8.5, band:"good"},
+              {v:"CWG",   label:"Slipping",               score: 7.2, band:"watch"},
+              {v:"GFS",   label:"Broken on this zone",    score: 3.4, band:"broken"}
+            ].map((row,i) => `
+              <div class="quality-row">
+                <span class="q-vendor">${row.v}</span>
+                <span class="q-label">${row.label}</span>
+                <div class="q-bar"><i class="q-fill" style="--q-target:${row.score*10}%;--q-delay:${i*180}ms"></i></div>
+                <span class="q-score">${row.score.toFixed(1)} <span class="q-score-of">/ 10</span></span>
+                <span class="q-badge q-${row.band}">${row.band==='good'?'GOOD':row.band==='watch'?'WATCH':'BROKEN'}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        </div>
+      </div>
+    `;
+    screensEl.querySelectorAll('[data-nav]').forEach(a => {
+      a.addEventListener('click', () => setScreen(a.dataset.nav));
+    });
+    // Kick off hero typewriter + live report each time Detail mounts.
+    if (d.heroSegments) typeHeroLine(d.heroSegments);
+    else if (d.hero) typeHeroLine(d.hero);
+    runDetailCycle(d);
+  }
+
+  // Typewriter for the Detail hero line. Supports a segmented form (d.heroSegments = [{t, c}…])
+  // which renders each segment into its own span so key phrases (location / delta / contract /
+  // confidence) get colored. Falls back to a plain typewriter on the string form.
+  function typeHeroLine(textOrSegments) {
+    const el = document.getElementById('detail-hero-text');
+    const hero = el && el.parentElement;
+    if (!el || !hero) return;
+    hero.classList.remove('typing-done');
+    el.innerHTML = '';
+    const speed = 22;
+
+    // Plain-string form
+    if (typeof textOrSegments === 'string') {
+      let i = 0;
+      (function step() {
+        if (i < textOrSegments.length) {
+          el.textContent = textOrSegments.substring(0, i + 1);
+          i++;
+          setTimeout(step, speed);
+        } else {
+          hero.classList.add('typing-done');
+        }
+      })();
+      return;
+    }
+
+    // Segmented form: pre-append empty spans, fill each one character-by-character.
+    const segments = textOrSegments;
+    const spans = segments.map(seg => {
+      const s = document.createElement('span');
+      if (seg.c) s.className = seg.c;
+      el.appendChild(s);
+      return s;
+    });
+    let segIdx = 0, charIdx = 0;
+    (function step() {
+      if (segIdx >= segments.length) { hero.classList.add('typing-done'); return; }
+      const seg = segments[segIdx];
+      if (charIdx < seg.t.length) {
+        spans[segIdx].textContent = seg.t.substring(0, charIdx + 1);
+        charIdx++;
+        setTimeout(step, speed);
+      } else {
+        segIdx++; charIdx = 0;
+        setTimeout(step, speed);
+      }
+    })();
+  }
+
+  // Detail "live report" orchestrator — stages a narrative across ~60s then wipes and restarts.
+  // Timeline rows land one every 10s; contract impact calculates in during the alarm window;
+  // "What to Do" shows a Generating spinner for ~15s, then typewrites the recommendation.
+  let detailReportTimers = [];
+  let detailCycleHandle = null;
+  function clearDetailTimers() {
+    detailReportTimers.forEach(id => clearTimeout(id));
+    detailReportTimers = [];
+    if (detailCycleHandle) { clearTimeout(detailCycleHandle); detailCycleHandle = null; }
+  }
+  function schedule(fn, delay) {
+    const id = setTimeout(fn, delay);
+    detailReportTimers.push(id);
+    return id;
+  }
+
+  function resetDetailReport(d) {
+    // Blank out timeline slots, impact cells, and the action block.
+    document.querySelectorAll('#detail-timeline .tl-slot').forEach(slot => { slot.className = 'tl-slot'; slot.innerHTML = ''; });
+    document.querySelectorAll('#impact-body .impact-row').forEach((r,i) => {
+      r.querySelector('.impact-mw').textContent = '—';
+      r.querySelector('.impact-mark').textContent = '—';
+      r.querySelector('.impact-exp').textContent = '—';
+      r.querySelector('.impact-val').textContent = '—';
+      r.classList.remove('filled');
+    });
+    const netEl = document.querySelector('#impact-body .impact-net');
+    if (netEl) { netEl.textContent = '—'; netEl.classList.remove('filled'); }
+    const gen = document.getElementById('action-generating');
+    const rev = document.getElementById('action-revealed');
+    if (gen) gen.style.display = '';
+    if (rev) rev.style.display = 'none';
+    const btns = document.getElementById('action-buttons');
+    if (btns) { btns.style.opacity = '0'; btns.style.pointerEvents = 'none'; }
+  }
+
+  function flashCell(el) {
+    el.classList.remove('tick'); void el.offsetWidth; el.classList.add('tick');
+  }
+
+  function fillContractRow(c, row) {
+    // Typewriter each field in sequence so the row reads as "being calculated."
+    const mw   = row.querySelector('.impact-mw');
+    const mark = row.querySelector('.impact-mark');
+    const exp  = row.querySelector('.impact-exp');
+    const val  = row.querySelector('.impact-val');
+    row.classList.add('filled');
+    if (mw)   typeInto(mw,   String(c.mw),                    22);
+    setTimeout(() => { if (mark) typeInto(mark, '$' + c.mark.toFixed(2),  22); }, 400);
+    setTimeout(() => { if (exp)  typeInto(exp,  '$' + c.expected.toFixed(2), 22); }, 800);
+    setTimeout(() => {
+      if (val) { val.classList.add(c.impact < 0 ? 'pnl-down' : 'pnl-up'); typeInto(val, fmtSigned(c.impact), 22); }
+    }, 1200);
+  }
+
+  function revealTimelineRow(t, slot, isRec, d) {
+    // Only the freshest row carries the "NEW" badge. Clear transient from any prior slot.
+    const timeline = document.getElementById('detail-timeline');
+    if (timeline) {
+      timeline.querySelectorAll('.tl-slot.transient').forEach(s => s.classList.remove('transient'));
+    }
+    // Sync the facts-strip TIME cell to the latest revealed row's timestamp — no more stale fire-time.
+    const timeFact = document.querySelector('.detail-head .facts .v');
+    if (timeFact && t.ts) {
+      timeFact.textContent = t.ts;
+      timeFact.classList.remove('tick'); void timeFact.offsetWidth; timeFact.classList.add('tick');
+    }
+    slot.className = `tl-slot tl-row ${t.sev} transient${isRec ? ' is-rec' : ''}`;
+    let expand = '';
+    if (isRec && d) {
+      expand = `
+        <div class="tl-expand">
+          <div class="tl-expand-head">IF YOU ACT NOW</div>
+          <div class="tl-expand-grid">
+            <div><span class="k">Close</span><span class="v"><b>${d.closeMW||60} MW</b> of <span class="ticker-mark">${d.closeContract||'HB_HOUSTON.DA.07'}</span></span></div>
+            <div><span class="k">Predicted loss if you hold</span><span class="v red">${d.predictedLoss||'$2.22M'}</span></div>
+            <div><span class="k">Realized loss if locked now</span><span class="v">~${d.realizedIfLocked||'$900K'}</span></div>
+            <div><span class="k">Estimated savings</span><span class="v green">~$1.3M</span></div>
+          </div>
+          <div class="tl-expand-cta">
+            <button class="btn-primary" data-action="rebalance">REBALANCE NOW</button>
+            <button class="btn-secondary" data-action="defer">REVIEW LATER</button>
+          </div>
+        </div>
+      `;
+    } else if (t.extra) {
+      expand = `<div class="tl-expand"><div class="tl-expand-body">${t.extra}</div></div>`;
+    }
+    slot.innerHTML = `
+      <div class="ts">${t.ts}</div>
+      <div class="marker"></div>
+      <div class="msg">
+        <b>${t.msg}</b>
+        <div class="note">${t.note}</div>
+        ${expand}
+      </div>
+    `;
+    requestAnimationFrame(() => slot.classList.add('enter'));
+  }
+
+  function revealRecommendation(d) {
+    const gen = document.getElementById('action-generating');
+    const rev = document.getElementById('action-revealed');
+    const body = document.getElementById('action-body-text');
+    const eli5 = document.getElementById('action-eli5').querySelector('em');
+    const btns = document.getElementById('action-buttons');
+    if (!gen || !rev || !body || !eli5) return;
+    gen.style.display = 'none';
+    rev.style.display = '';
+    const closeContract = (d && d.closeContract) || 'HB_HOUSTON.DA.07';
+    const closeMW       = (d && d.closeMW) || 60;
+    const predicted     = (d && d.predictedLoss) || '$2.22M';
+    const realized      = (d && d.realizedIfLocked) || '$900K';
+    const zone          = (d && d.breadcrumbs && d.breadcrumbs.zone) || 'HOUSTON';
+    const zoneNice      = zone.toLowerCase();
+    const plainBody = `Sell ${closeMW} MW of your ${zoneNice} day-ahead position (${closeContract}) before 9:00 AM CT, when the grid updates its forecast. This cuts your worst-case loss from ${predicted} to about ${realized}.`;
+    const plainEli5 = `Translation \u2014 you\u2019re holding ${closeMW} MW more ${zoneNice} exposure than you should be right now. If you don\u2019t cut before the next grid update at 9:00 AM CT, the market locks in a price that works against you.`;
+    body.textContent = '';
+    eli5.textContent = '';
+    typeInto(body, plainBody, 18, () => {
+      typeInto(eli5, plainEli5, 12, () => {
+        if (btns) { btns.style.opacity = '1'; btns.style.pointerEvents = 'auto'; }
+      });
+    });
+  }
+
+  function typeInto(el, text, speed, done) {
+    let i = 0;
+    function step() {
+      if (i < text.length) {
+        el.textContent = text.substring(0, i + 1);
+        i++;
+        const id = setTimeout(step, speed);
+        detailReportTimers.push(id);
+      } else if (done) {
+        done();
+      }
+    }
+    step();
+  }
+
+  function runDetailCycle(d) {
+    clearDetailTimers();
+    resetDetailReport(d);
+    const slots = document.querySelectorAll('#detail-timeline .tl-slot');
+    const rows = document.querySelectorAll('#impact-body .impact-row');
+    const netEl = document.querySelector('#impact-body .impact-net');
+    const genSub = document.getElementById('generating-sub');
+    const genSteps = [
+      'Re-scoring with the latest satellite frame…',
+      'Running 24 vendor models against current conditions…',
+      'Sizing a rebalance that holds worst-case under $1M…',
+      'Preparing suggested action…'
+    ];
+
+    // Cycle timing: each of 5 timeline rows 10s apart. Last row is the recommendation — it gets
+    // an expandable action block on hover with predicted vs realized loss + REBALANCE NOW.
+    const lastIdx = Math.min(slots.length, d.timeline.length) - 1;
+    d.timeline.slice(0, slots.length).forEach((t, i) => {
+      const isRec = i === lastIdx;
+      schedule(() => { if (slots[i]) revealTimelineRow(t, slots[i], isRec, d); }, i * 10000);
+    });
+
+    // Contract impact calculates during alarm window (after row 4 at 30s).
+    d.contracts.forEach((c, i) => {
+      schedule(() => { if (rows[i]) fillContractRow(c, rows[i]); }, 30000 + i * 3000);
+    });
+    // Net total — typed in at the end of the contract-impact calculation.
+    schedule(() => {
+      if (!netEl) return;
+      const net = d.contracts.reduce((s,c) => s + c.impact, 0);
+      netEl.classList.add('filled');
+      typeInto(netEl, fmtSigned(net), 22);
+    }, 40000);
+
+    // Generating sub-text cycles every 3.5s to feel like work is happening.
+    genSteps.forEach((txt, i) => {
+      schedule(() => { if (genSub) genSub.textContent = txt; }, i * 3500);
+    });
+
+    // At ~42s, swap the Generating state for the typewriter recommendation.
+    schedule(() => revealRecommendation(d), 42000);
+
+    // Detail runs exactly once per visit. Narrative holds at the final state until the user navigates
+    // away. Revisit the Detail screen (via map click or alarm row) to re-trigger the report.
+  }
+
+  // ---------- ARCHIVE ----------
+  function renderArchive() {
+    const f = state.archiveFilter;
+    const rows = DATA.archive.filter(r => {
+      if (f.iso !== 'ALL' && r.iso !== f.iso) return false;
+      if (f.conf !== 'ALL' && r.conf !== f.conf) return false;
+      if (f.q && !(r.event + ' ' + r.metric + ' ' + r.id).toLowerCase().includes(f.q.toLowerCase())) return false;
+      return true;
+    });
+
+    screensEl.innerHTML = `
+      <div class="archive" data-screen-label="03 Archive">
+        <div class="archive-head">
+          <h1>Classified Event Archive</h1>
+          <span class="count">${rows.length} OF ${DATA.archive.length} EVENTS</span>
+        </div>
+        <div class="archive-filters">
+          <div class="f">
+            ISO
+            <select id="f-iso">
+              <option value="ALL">ALL (7)</option>
+              ${DATA.isos.map(i => `<option value="${i.code}" ${f.iso===i.code?'selected':''}>${i.code}</option>`).join('')}
+            </select>
+          </div>
+          <div class="f">
+            CONF
+            <select id="f-conf">
+              <option value="ALL">ALL</option>
+              <option value="HIGH" ${f.conf==='HIGH'?'selected':''}>HIGH</option>
+              <option value="MEDIUM" ${f.conf==='MEDIUM'?'selected':''}>MEDIUM</option>
+              <option value="LOW" ${f.conf==='LOW'?'selected':''}>LOW</option>
+            </select>
+          </div>
+          <div class="f">
+            <span style="color:var(--fg-mute)">SEARCH</span>
+            <input id="f-q" placeholder="EVENT / METRIC / ID" value="${f.q}"/>
+          </div>
+        </div>
+        <div class="archive-table-wrap">
+          <table class="archive-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>TIMESTAMP (CT)</th>
+                <th>EVENT</th>
+                <th>ISO</th>
+                <th>METRIC</th>
+                <th>CONF</th>
+                <th>RESOLUTION</th>
+                <th class="num">IMPACT</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(r => `
+                <tr>
+                  <td class="ev-id">${r.id}</td>
+                  <td>${r.ts}</td>
+                  <td>${r.event}</td>
+                  <td>${r.iso}</td>
+                  <td>${r.metric}</td>
+                  <td><span class="conf-tag ${r.conf.toLowerCase()}">${r.conf}</span></td>
+                  <td style="color:${r.res==='False'?'var(--fg-mute)':'var(--fg-dim)'}">${r.res}</td>
+                  <td class="num" style="color:${r.impact<0?'var(--red)':'var(--fg-dim)'}">${r.impact?fmtSigned(r.impact):'—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+    document.getElementById('f-iso').addEventListener('change', (e) => { state.archiveFilter.iso = e.target.value; renderArchiveRows(); });
+    document.getElementById('f-conf').addEventListener('change', (e) => { state.archiveFilter.conf = e.target.value; renderArchiveRows(); });
+    document.getElementById('f-q').addEventListener('input', (e) => { state.archiveFilter.q = e.target.value; renderArchiveRows(); });
+  }
+
+  // Partial re-render: update only tbody + count so the <input> stays in the DOM and keeps focus/caret.
+  function renderArchiveRows() {
+    const f = state.archiveFilter;
+    const rows = DATA.archive.filter(r => {
+      if (f.iso !== 'ALL' && r.iso !== f.iso) return false;
+      if (f.conf !== 'ALL' && r.conf !== f.conf) return false;
+      if (f.q && !(r.event + ' ' + r.metric + ' ' + r.id).toLowerCase().includes(f.q.toLowerCase())) return false;
+      return true;
+    });
+    const body = document.querySelector('.archive-table tbody');
+    const count = document.querySelector('.archive-head .count');
+    if (!body || !count) return;
+    count.textContent = `${rows.length} OF ${DATA.archive.length} EVENTS`;
+    count.classList.remove('tick'); void count.offsetWidth; count.classList.add('tick');
+    body.innerHTML = rows.map(r => `
+      <tr>
+        <td class="ev-id">${r.id}</td>
+        <td>${r.ts}</td>
+        <td>${r.event}</td>
+        <td>${r.iso}</td>
+        <td>${r.metric}</td>
+        <td><span class="conf-tag ${r.conf.toLowerCase()}">${r.conf}</span></td>
+        <td style="color:${r.res==='False'?'var(--fg-mute)':'var(--fg-dim)'}">${r.res}</td>
+        <td class="num" style="color:${r.impact<0?'var(--red)':'var(--fg-dim)'}">${r.impact?fmtSigned(r.impact):'—'}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ---------- SETTINGS ----------
+  function renderSettings() {
+    const s = state.settings;
+    const tab = state.settingsTab;
+    screensEl.innerHTML = `
+      <div class="settings" data-screen-label="04 Settings">
+        <div class="settings-nav">
+          <button class="${tab==='iso'?'active':''}" data-tab="iso">WHICH GRIDS TO WATCH</button>
+          <button class="${tab==='thresh'?'active':''}" data-tab="thresh">WHEN TO RING THE ALARM</button>
+          <button class="${tab==='channels'?'active':''}" data-tab="channels">WHERE TO SEND ALERTS</button>
+          <button class="${tab==='about'?'active':''}" data-tab="about">SYSTEM HEALTH</button>
+        </div>
+        <div class="settings-panes">
+          ${tab === 'iso' ? `
+            <div class="settings-section">
+              <h2>Which grids to watch</h2>
+              <div class="lede">Pick the US power grids this desk trades. Unpicked grids are not monitored.</div>
+              <div class="iso-grid">
+                ${DATA.isos.map(i => `
+                  <div class="iso-toggle ${s.isoEnabled[i.code]?'on':''}" data-iso="${i.code}">
+                    <span>${i.code}</span>
+                    <span class="chk"></span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${tab === 'thresh' ? `
+            <div class="settings-section">
+              <h2>When to ring the alarm</h2>
+              <div class="lede">How far off a forecast has to be, for how long, before we ring the alarm.</div>
+              <table class="thresh-table">
+                <thead><tr><th>METRIC</th><th>MIN Δ</th><th>UNIT</th><th>CONFIDENCE FLOOR</th></tr></thead>
+                <tbody>
+                  <tr><td>Cloud cover</td><td><input type="number" value="${s.thresholds.cloud}" step="1" data-th="cloud"/></td><td>%</td><td>MEDIUM</td></tr>
+                  <tr><td>Temperature</td><td><input type="number" value="${s.thresholds.temp}" step="0.1" data-th="temp"/></td><td>°F</td><td>MEDIUM</td></tr>
+                  <tr><td>Wind speed</td><td><input type="number" value="${s.thresholds.wind}" step="1" data-th="wind"/></td><td>%</td><td>MEDIUM</td></tr>
+                  <tr><td>Load</td><td><input type="number" value="${s.thresholds.load}" step="0.1" data-th="load"/></td><td>%</td><td>HIGH</td></tr>
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+          ${tab === 'channels' ? `
+            <div class="settings-section">
+              <h2>Where to send alerts</h2>
+              <div class="lede">Alarms always post to this terminal. The channels below add extra delivery based on how bad the alarm is.</div>
+              <div class="channels">
+                <div class="channel-row">
+                  <span class="name">TERMINAL</span>
+                  <span class="val">All confidence levels · always on</span>
+                  <span class="toggle on" data-ch="terminal"></span>
+                </div>
+                <div class="channel-row">
+                  <span class="name">EMAIL</span>
+                  <span class="val">j.carter@meridianpower.com · MED + HIGH only</span>
+                  <span class="toggle ${s.channels.email?'on':''}" data-ch="email"></span>
+                </div>
+                <div class="channel-row">
+                  <span class="name">SMS</span>
+                  <span class="val">+1 (917) 555-0147 · HIGH only</span>
+                  <span class="toggle ${s.channels.sms?'on':''}" data-ch="sms"></span>
+                </div>
+                <div class="channel-row">
+                  <span class="name">WEBHOOK</span>
+                  <span class="val">Not configured — POST JSON to endpoint</span>
+                  <span class="toggle ${s.channels.webhook?'on':''}" data-ch="webhook"></span>
+                </div>
+                <div class="channel-row">
+                  <span class="name">DESK BRIDGE</span>
+                  <span class="val">Cross-post to internal chat · HIGH only</span>
+                  <span class="toggle ${s.channels.bloomberg?'on':''}" data-ch="bloomberg"></span>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+          ${tab === 'about' ? `
+            <div class="settings-section">
+              <h2>System health</h2>
+              <div class="lede">Live status of the satellite feed and every forecaster we pull from.</div>
+              <table class="thresh-table" style="max-width:780px">
+                <thead><tr><th>FEED</th><th>CADENCE</th><th>LAST SYNC</th><th>LATENCY</th><th>STATUS</th></tr></thead>
+                <tbody>
+                  <tr><td>GOES-16 ABI L2</td><td>5 min</td><td>8:52:31 AM CT</td><td>34.2 ms</td><td style="color:var(--green)">NOMINAL</td></tr>
+                  <tr><td>GOES-18 ABI L2</td><td>5 min</td><td>8:52:18 AM CT</td><td>41.7 ms</td><td style="color:var(--green)">NOMINAL</td></tr>
+                  <tr><td>NWS / NBM</td><td>1 h</td><td>12:00:00 AM CT</td><td>118 ms</td><td style="color:var(--green)">NOMINAL</td></tr>
+                  <tr><td>GFS 0.25°</td><td>6 h</td><td>7:00:00 PM CT</td><td>210 ms</td><td style="color:var(--green)">NOMINAL</td></tr>
+                  <tr><td>ECMWF IFS</td><td>6 h</td><td>7:00:00 PM CT</td><td>304 ms</td><td style="color:var(--yellow)">LAGGED 4 min</td></tr>
+                  <tr><td>CWG proprietary</td><td>4 h</td><td>11:00:00 PM CT</td><td>88 ms</td><td style="color:var(--green)">NOMINAL</td></tr>
+                  <tr><td>DTN proprietary</td><td>4 h</td><td>11:00:00 PM CT</td><td>96 ms</td><td style="color:var(--green)">NOMINAL</td></tr>
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    screensEl.querySelectorAll('[data-tab]').forEach(b => {
+      b.addEventListener('click', () => { state.settingsTab = b.dataset.tab; renderSettings(); });
+    });
+    screensEl.querySelectorAll('[data-iso]').forEach(el => {
+      el.addEventListener('click', () => {
+        const k = el.dataset.iso;
+        state.settings.isoEnabled[k] = !state.settings.isoEnabled[k];
+        renderSettings();
+      });
+    });
+    screensEl.querySelectorAll('[data-ch]').forEach(el => {
+      el.addEventListener('click', () => {
+        const k = el.dataset.ch;
+        state.settings.channels[k] = !state.settings.channels[k];
+        // Micro-pulse the toggle for tactile feedback before re-render swallows it.
+        el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+        setTimeout(() => renderSettings(), 120);
+      });
+    });
+    screensEl.querySelectorAll('[data-th]').forEach(el => {
+      el.addEventListener('input', () => {
+        state.settings.thresholds[el.dataset.th] = parseFloat(el.value);
+      });
+    });
+  }
+
+  // ---------- Router ----------
+  function render() {
+    if (state.screen === 'main') renderMain();
+    else if (state.screen === 'detail') renderDetail();
+    else if (state.screen === 'archive') renderArchive();
+    else if (state.screen === 'settings') renderSettings();
+  }
+
+  // ---------- Wire top nav ----------
+  document.querySelectorAll('.topnav button').forEach(b => {
+    b.addEventListener('click', () => setScreen(b.dataset.screen));
+  });
+
+  // ---------- Clock ----------
+  // Demo clock — anchored to 8:46:50 AM CT at page load, ticks at real-time pace.
+  // Not the user's wall clock; keeps the narrative consistent with the scenario timestamps
+  // (Houston alarm fires at 8:47:12 AM CT, ~22 seconds after page load — live trading hours).
+  const DEMO_CLOCK_ANCHOR_MS = (function() {
+    const d = new Date();
+    d.setHours(8, 46, 50, 0);
+    return d.getTime();
+  })();
+  const DEMO_LOAD_MS = Date.now();
+  function tickClock() {
+    const elapsed = Date.now() - DEMO_LOAD_MS;
+    const now = new Date(DEMO_CLOCK_ANCHOR_MS + elapsed);
+    const pad = (n) => String(n).padStart(2, '0');
+    let h = now.getHours();
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    const h12 = h === 0 ? 12 : (h > 12 ? h - 12 : h);
+    const str = `${h12}:${pad(now.getMinutes())}:${pad(now.getSeconds())} ${suffix} CT`;
+    const el = document.getElementById('clock');
+    if (el) el.textContent = str;
+  }
+  setInterval(tickClock, 1000); tickClock();
+
+  // Last sync counter
+  let syncSecs = 7;
+  setInterval(() => {
+    syncSecs = (syncSecs + 1) % 60;
+    const el = document.getElementById('last-sync');
+    if (el) {
+      el.textContent = `00:${String(syncSecs).padStart(2,'0')}`;
+      if (syncSecs === 0) {
+        el.classList.remove('flash');
+        // force reflow so the animation restarts
+        void el.offsetWidth;
+        el.classList.add('flash');
+      }
+    }
+  }, 1000);
+
+  // ---------- Alert Detail "breathing" updates ----------
+  // Simulates a live dashboard: pulse markers, flicker confidence, drift exposure.
+  setInterval(() => {
+    if (state.screen !== 'detail') return;
+    // Pulse the latest severity markers
+    document.querySelectorAll('.detail .tl-row.hi .marker').forEach(el => {
+      el.classList.remove('pulsing'); void el.offsetWidth; el.classList.add('pulsing');
+    });
+    // Subtly tick the divergence value — the number that would actually be moving
+    const deltaFact = [...document.querySelectorAll('.detail-head .facts > div')].find(d => d.textContent.includes('Δ'));
+    if (deltaFact) { deltaFact.classList.remove('tick'); void deltaFact.offsetWidth; deltaFact.classList.add('tick'); }
+  }, 2600);
+
+  // Old transient-line loop retired — the Detail live-report orchestrator (runDetailCycle) now owns the timeline.
+  // Keeping the data here as an archive in case we want to surface these as micro-updates elsewhere.
+  const detailTransientLines = [
+    { ts: '12:52 AM CT', sev: 'md', msg: 'New satellite frame in — clouds still 34% thicker than forecast.', note: 'No change to the alarm. Gap is holding.' },
+  ];
+  /* eslint-disable-next-line no-unused-vars */
+  let detailTransientIdx = 0;
+  if (false) setInterval(() => {
+    const timeline = document.querySelector('.detail .timeline');
+    if (!timeline) return;
+    const line = detailTransientLines[detailTransientIdx % detailTransientLines.length];
+    detailTransientIdx++;
+    const row = document.createElement('div');
+    row.className = `tl-row ${line.sev} transient`;
+    row.innerHTML = `
+      <div class="ts">${line.ts}</div>
+      <div class="marker"></div>
+      <div class="msg">
+        <b>${line.msg}</b>
+        <div class="note">${line.note}</div>
+      </div>
+    `;
+    timeline.appendChild(row);
+    requestAnimationFrame(() => row.classList.add('enter'));
+    const transients = timeline.querySelectorAll('.tl-row.transient');
+    if (transients.length > 2) {
+      const oldest = transients[0];
+      oldest.classList.add('leaving');
+      setTimeout(() => oldest.remove(), 700);
+    }
+  }, 7000);
+
+  // ---------- Rebalance modal (REBALANCE NOW button) ----------
+  const modal = document.getElementById('rebalance-modal');
+  const modalDone = document.getElementById('modal-done');
+
+  function showModalStep(name) {
+    modal.querySelectorAll('.modal-step').forEach(s => {
+      s.classList.toggle('active', s.dataset.step === name);
+    });
+  }
+
+  // Parse "$2.22M" / "$900K" / "$450" etc. into a raw dollar number.
+  function parseUSD(s) {
+    const m = (s || '').match(/([\d.]+)\s*([MK])?/i);
+    if (!m) return 0;
+    const n = parseFloat(m[1]);
+    const suf = (m[2] || '').toUpperCase();
+    if (suf === 'M') return n * 1e6;
+    if (suf === 'K') return n * 1e3;
+    return n;
+  }
+  function formatUSD(n) {
+    if (!isFinite(n)) return '$0';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
+    if (n >= 1e3) return '$' + Math.round(n / 1e3) + 'K';
+    return '$' + n;
+  }
+
+  function openRebalanceModal() {
+    const d = state.detailTarget || DATA.drill;
+    const closeContract = (d && d.closeContract) || 'HB_HOUSTON.DA.07';
+    const closeMW       = (d && d.closeMW) || 60;
+    const predicted     = (d && d.predictedLoss) || '$2.22M';
+    const realized      = (d && d.realizedIfLocked) || '$900K';
+    const savingsN      = parseUSD(predicted) - parseUSD(realized);
+    const savingsStr    = '~' + formatUSD(savingsN);
+    const zone          = (d && d.breadcrumbs && d.breadcrumbs.zone) || 'HOUSTON';
+
+    // Reset modal chrome to this scenario.
+    const head = document.getElementById('modal-head-text');
+    if (head) head.textContent = 'REBALANCE · ' + closeContract;
+
+    const procPhases = [
+      { title: 'Analyzing current exposure',    body: 'Pulling live marks and counterparty limits for ' + closeContract + '…' },
+      { title: 'Checking forecast quality',     body: 'Comparing 4 vendor forecasts against the live satellite feed for the ' + zone + ' zone…' },
+      { title: 'Sizing the rebalance',          body: 'Solving for the smallest position adjustment that caps worst-case loss under ' + formatUSD(parseUSD(realized) * 1.1) + '…' },
+      { title: 'Submitting order',              body: 'Routing a -' + closeMW + ' MW day-ahead sell for ' + closeContract + ' to the desk bridge…' },
+      { title: 'Waiting for fill confirmation', body: 'Order ack received. Awaiting fill price from the clearing venue…' }
+    ];
+
+    // Populate result + savings sections safely (textContent; no innerHTML).
+    const resultBody = document.getElementById('result-body');
+    if (resultBody) {
+      resultBody.textContent = '';
+      resultBody.appendChild(document.createTextNode('Reduced ' + zone.toLowerCase() + ' position by '));
+      const b = document.createElement('b'); b.textContent = closeMW + ' MW'; resultBody.appendChild(b);
+      resultBody.appendChild(document.createTextNode(' (' + closeContract + ').'));
+    }
+    const reasonsEl = document.getElementById('result-reasons');
+    if (reasonsEl) {
+      reasonsEl.textContent = '';
+      const reasons = [
+        'Satellite observations disagree with forecast by ' + (d.divergence || '+34%'),
+        'Three consecutive 5-min frames confirm the gap',
+        'Next grid re-run at 9:00 AM CT · 13 minutes out',
+        'Order routed to day-ahead book · fill confirmed'
+      ];
+      reasons.forEach(r => { const li = document.createElement('li'); li.textContent = r; reasonsEl.appendChild(li); });
+    }
+    const savingsNum = document.getElementById('savings-num');
+    if (savingsNum) savingsNum.textContent = savingsStr;
+    const savingsBody = document.getElementById('savings-body');
+    if (savingsBody) {
+      savingsBody.textContent = '';
+      savingsBody.appendChild(document.createTextNode('Worst-case loss cut from '));
+      const b1 = document.createElement('b'); b1.textContent = predicted; savingsBody.appendChild(b1);
+      savingsBody.appendChild(document.createTextNode(' to about '));
+      const b2 = document.createElement('b'); b2.textContent = realized; savingsBody.appendChild(b2);
+      savingsBody.appendChild(document.createTextNode('. Nice work.'));
+    }
+
+    modal.setAttribute('aria-hidden', 'false');
+    modal.classList.add('open');
+    modalDone.style.display = 'none';
+    showModalStep('processing');
+
+    const procTitle = document.getElementById('proc-title');
+    const procBody  = document.getElementById('proc-body');
+    procPhases.forEach((p, i) => {
+      setTimeout(() => {
+        if (procTitle) procTitle.textContent = p.title;
+        if (procBody)  procBody.textContent  = p.body;
+      }, i * 1400);
+    });
+    setTimeout(() => showModalStep('result'),  procPhases.length * 1400 + 200);
+    setTimeout(() => {
+      showModalStep('savings');
+      modalDone.style.display = '';
+    }, procPhases.length * 1400 + 2800);
+  }
+  function closeRebalanceModal() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  modalDone.addEventListener('click', closeRebalanceModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeRebalanceModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) closeRebalanceModal();
+  });
+  // Delegate REBALANCE NOW / REVIEW LATER clicks via data-action attribute on buttons (the Detail template renders fresh each time).
+  document.body.addEventListener('click', (e) => {
+    const action = e.target && e.target.dataset && e.target.dataset.action;
+    if (action === 'rebalance') openRebalanceModal();
+    if (action === 'defer')     { /* REVIEW LATER — no-op for now */ }
+  });
+
+  // ---------- Keyboard shortcut ----------
+  document.addEventListener('keydown', (e) => {
+    // Arrow keys to scrub chart when on main
+    if (state.screen === 'main' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      const step = e.shiftKey ? 6 : 1;
+      state.scrubIdx = Math.max(0, Math.min(DATA.chart.length - 1, state.scrubIdx + (e.key === 'ArrowRight' ? step : -step)));
+      renderChartOnce();
+    }
+  });
+
+  // ---------- Main-screen liveness ("breathing") ----------
+  // Chart sweep is now handled by CSS animation on the observation path itself (stroke-dashoffset).
+  // The interactive drag-scrub still works; we just no longer tick the scrubber index in JS.
+
+  // Alert row severity-bar heartbeat — rotates through visible rows.
+  let heartbeatIdx = 0;
+  setInterval(() => {
+    if (state.screen !== 'main') return;
+    const rows = document.querySelectorAll('.alert-row');
+    if (!rows.length) return;
+    const row = rows[heartbeatIdx % rows.length];
+    heartbeatIdx++;
+    row.classList.remove('heartbeat'); void row.offsetWidth; row.classList.add('heartbeat');
+  }, 6000);
+
+  // Legacy Mark-to-market drift interval retired — pos-mtm is now driven by
+  // renderMoneyAtRiskForScenario (scenario-aware pre/post P&L stages).
+
+  // Status bar LAT ticker — ±5ms variation every ~3.5s
+  setInterval(() => {
+    const el = document.getElementById('sb-lat');
+    if (!el) return;
+    const ms = (28 + Math.random() * 14).toFixed(1);
+    el.textContent = `${ms}ms`;
+  }, 3500);
+
+  // Bind ACTIVE ALARMS count to data (defensive).
+  const sbAlerts = document.getElementById('sb-alerts');
+  if (sbAlerts) sbAlerts.textContent = DATA.alerts.length;
+
+  // ---------- Init ----------
+  renderTicker();
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo Coming April 30 &mdash; SYNOPTICFEED</title>
+    <meta name="description" content="The SynopticFeed demo goes live April 30, 2026. Sign up for exclusive access.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/png" href="/assets/favicon.png">
+    <link rel="canonical" href="https://synopticfeed.com/demo">
+    <style>
+        :root {
+            --bg: #000000;
+            --surface: #0c0c0c;
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #FFFFFF;
+            --text-dim: rgba(255, 255, 255, 0.72);
+            --text-faint: rgba(255, 255, 255, 0.45);
+            --accent: #FF7800;
+            --accent-glow: rgba(255, 120, 0, 0.18);
+            --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+        }
+        html, body {
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+        body {
+            color: var(--text);
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
+        }
+        .coming-wrap {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 80px 24px 96px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .coming-brand {
+            display: inline-block;
+            margin-bottom: 80px;
+            opacity: 1;
+            transition: opacity 180ms var(--ease);
+        }
+        .coming-brand:hover { opacity: 0.7; }
+        .coming-brand img { height: 28px; display: block; }
+        .section-stamp {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            opacity: 0.9;
+        }
+        h1 {
+            font-family: "Times New Roman", Times, serif;
+            font-weight: normal;
+            font-size: 64px;
+            line-height: 1.02;
+            letter-spacing: -0.01em;
+            margin: 0 0 24px;
+        }
+        h1 .date {
+            color: var(--accent);
+        }
+        .coming-sub {
+            font-size: 20px;
+            line-height: 1.5;
+            color: var(--text-dim);
+            margin: 0 0 48px;
+            max-width: 520px;
+        }
+        .coming-cta {
+            display: inline-block;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 14px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            text-decoration: none;
+            padding: 18px 36px;
+            border: 2px solid var(--accent);
+            background: var(--accent);
+            color: #000000;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 180ms var(--ease), color 180ms var(--ease), transform 120ms var(--ease);
+            min-height: 56px;
+            box-sizing: border-box;
+        }
+        .coming-cta:hover {
+            background: transparent;
+            color: var(--accent);
+        }
+        .coming-cta:active { transform: translateY(1px); }
+        .coming-cta-sub {
+            display: block;
+            margin-top: 16px;
+            color: var(--text-faint);
+            font-size: 14px;
+        }
+        .coming-footer {
+            margin-top: auto;
+            padding-top: 80px;
+            color: var(--text-faint);
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+        .coming-home {
+            color: var(--text-faint);
+            text-decoration: none;
+            transition: color 180ms var(--ease);
+        }
+        .coming-home:hover {
+            color: var(--text-dim);
+        }
+
+        @keyframes comingFadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .coming-brand,
+        .section-stamp,
+        h1,
+        .coming-sub,
+        .coming-cta-wrap {
+            animation: comingFadeUp 320ms var(--ease) both;
+        }
+        .section-stamp { animation-delay: 80ms; }
+        h1 { animation-delay: 140ms; }
+        .coming-sub { animation-delay: 220ms; }
+        .coming-cta-wrap { animation-delay: 300ms; }
+
+        @media (max-width: 520px) {
+            .coming-wrap { padding: 56px 20px 64px; }
+            .coming-brand { margin-bottom: 56px; }
+            h1 { font-size: 44px; }
+            .coming-sub { font-size: 18px; margin-bottom: 36px; }
+            .coming-cta { padding: 16px 28px; font-size: 13px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .coming-brand,
+            .section-stamp,
+            h1,
+            .coming-sub,
+            .coming-cta-wrap {
+                animation: none;
+            }
+            .coming-brand,
+            .coming-cta,
+            .coming-home {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="coming-wrap">
+        <a href="/" class="coming-brand" aria-label="SynopticFeed home" data-track="demo-coming-soon:header:home">
+            <img src="/assets/WhiteHorizontalLogo.svg" alt="SYNOPTICFEED">
+        </a>
+
+        <div class="section-stamp">SYNOPTICFEED // DEMO</div>
+        <h1>Coming <span class="date">April 30, 2026</span>.</h1>
+        <p class="coming-sub">
+            The fire alarm for crappy weather forecasts, before you lose. Exclusive access opens when we turn on your zone.
+        </p>
+
+        <div class="coming-cta-wrap">
+            <a href="/call?utm_source=demo&amp;utm_medium=coming-soon&amp;utm_campaign=demo-gate"
+               class="coming-cta"
+               data-track="demo-coming-soon:cta-signup">
+                Sign up for exclusive access &rarr;
+            </a>
+            <span class="coming-cta-sub">Takes under 60 seconds</span>
+        </div>
+
+        <div class="coming-footer">
+            <a href="/" class="coming-home" data-track="demo-coming-soon:footer:home">&larr; Back home</a>
+        </div>
+    </div>
+
+    <script src="/tracker.js" defer></script>
+    <script src="/analytics.js" defer></script>
+</body>
+</html>
