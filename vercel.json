@@ -3,6 +3,9 @@
   "trailingSlash": false,
   "outputDirectory": ".",
   "buildCommand": "",
+  "redirects": [
+    { "source": "/pricing", "destination": "/call", "permanent": false }
+  ],
   "headers": [
     {
       "source": "/assets/(.*)",

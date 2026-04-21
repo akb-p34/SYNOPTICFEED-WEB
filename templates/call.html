@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Call &mdash; SynopticFeed</title>
+    <meta name="description" content="SynopticFeed is the fire alarm for crappy weather forecasts. Book a 15-minute intro call.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="canonical" href="https://synopticfeed.com/call">
+    <style>
+        :root {
+            --call-bg: #0a0a0a;
+            --call-surface: #141414;
+            --call-surface-alt: #142030;
+            --call-border: #2a2a2a;
+            --call-text: #f5f5f5;
+            --call-text-dim: #cfcfcf;
+            --call-text-faint: #8f8f8f;
+            --call-accent: #7ac9ff;
+            --call-danger: #ff7a7a;
+        }
+        html, body {
+            background: var(--call-bg);
+            margin: 0;
+            padding: 0;
+        }
+        body.call-body {
+            color: var(--call-text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            line-height: 1.5;
+        }
+        .call-wrap {
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 48px 24px 96px;
+        }
+        .call-brand {
+            display: inline-block;
+            margin-bottom: 56px;
+        }
+        .call-brand img { height: 28px; display: block; }
+        .call-hero h1 {
+            font-size: 56px;
+            line-height: 1.05;
+            font-weight: 700;
+            margin: 0 0 20px;
+            letter-spacing: -0.02em;
+        }
+        .call-hero .sub {
+            font-size: 22px;
+            line-height: 1.4;
+            color: var(--call-text-dim);
+            margin: 0 0 14px;
+        }
+        .call-hero .time {
+            font-size: 18px;
+            color: var(--call-text-faint);
+            margin: 0 0 48px;
+            font-style: italic;
+        }
+        .call-progress {
+            font-size: 13px;
+            letter-spacing: 0.14em;
+            color: var(--call-text-faint);
+            text-transform: uppercase;
+            margin: 0 0 28px;
+        }
+        .call-field {
+            display: block;
+            margin: 0 0 28px;
+        }
+        .call-field > span.label {
+            display: block;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 12px;
+            color: var(--call-text);
+            line-height: 1.3;
+        }
+        .call-field input[type="text"],
+        .call-field input[type="email"],
+        .call-field input[type="url"] {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 20px;
+            padding: 18px 20px;
+            border: 2px solid var(--call-border);
+            background: var(--call-surface);
+            color: var(--call-text);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .call-field input:focus {
+            border-color: var(--call-accent);
+        }
+        .call-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .call-choice {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            padding: 16px 18px;
+            border: 2px solid var(--call-border);
+            background: var(--call-surface);
+            color: var(--call-text);
+            border-radius: 10px;
+            cursor: pointer;
+            min-height: 58px;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .call-choice input {
+            margin: 0 14px 0 0;
+            width: 22px;
+            height: 22px;
+            accent-color: var(--call-accent);
+            flex-shrink: 0;
+        }
+        .call-choice:has(input:checked) {
+            border-color: var(--call-accent);
+            background: var(--call-surface-alt);
+        }
+        .call-eoi {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin: 28px 0;
+            padding: 18px 20px;
+            background: var(--call-surface);
+            border: 2px solid var(--call-border);
+            border-radius: 10px;
+            font-size: 17px;
+            line-height: 1.45;
+            color: var(--call-text-dim);
+            cursor: pointer;
+        }
+        .call-eoi:has(input:checked) {
+            border-color: var(--call-accent);
+            background: var(--call-surface-alt);
+            color: var(--call-text);
+        }
+        .call-eoi input {
+            width: 24px;
+            height: 24px;
+            margin-top: 2px;
+            accent-color: var(--call-accent);
+            flex-shrink: 0;
+        }
+        .call-btn {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 20px 24px;
+            border: none;
+            border-radius: 10px;
+            background: var(--call-accent);
+            color: #0a0a0a;
+            cursor: pointer;
+            margin-top: 16px;
+            min-height: 64px;
+            font-family: inherit;
+        }
+        .call-btn:active { transform: translateY(1px); }
+        .call-btn-secondary {
+            background: transparent;
+            color: var(--call-text-dim);
+            border: 2px solid var(--call-border);
+            margin-top: 12px;
+        }
+        .call-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+        .call-error {
+            color: var(--call-danger);
+            font-size: 17px;
+            margin: 14px 0 0;
+            min-height: 22px;
+        }
+        .call-hp {
+            position: absolute;
+            left: -9999px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        @media (max-width: 520px) {
+            .call-wrap { padding: 32px 20px 72px; }
+            .call-hero h1 { font-size: 42px; }
+            .call-hero .sub { font-size: 19px; }
+            .call-hero .time { font-size: 17px; margin-bottom: 40px; }
+            .call-field > span.label { font-size: 18px; }
+            .call-choice { font-size: 17px; }
+        }
+    </style>
+</head>
+<body class="call-body">
+    <div class="call-wrap">
+        <a href="/" class="call-brand" aria-label="SynopticFeed home">
+            <img src="assets/WhiteHorizontalLogo.svg" alt="SYNOPTICFEED">
+        </a>
+
+        <section class="call-hero">
+            <h1>Learn more.</h1>
+            <p class="sub">SynopticFeed is the fire alarm for crappy weather forecasts &mdash; before you lose.</p>
+            <p class="time">Takes under 60 seconds.</p>
+        </section>
+
+        <form id="call-form" novalidate>
+            <section id="call-page-1" class="call-page">
+                <p class="call-progress">Step 1 of 2</p>
+
+                <label class="call-field">
+                    <span class="label">Full name</span>
+                    <input type="text" name="name" required autocomplete="name" maxlength="120" autofocus>
+                </label>
+
+                <label class="call-field">
+                    <span class="label">Email</span>
+                    <input type="email" name="email" required autocomplete="email" maxlength="254" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false">
+                </label>
+
+                <label class="call-field">
+                    <span class="label">Company</span>
+                    <input type="text" name="company" required autocomplete="organization" maxlength="160">
+                </label>
+
+                <label class="call-field">
+                    <span class="label">Title / role</span>
+                    <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
+                </label>
+
+                <button type="button" class="call-btn" data-next>Next &rarr;</button>
+                <p class="call-error" data-error="1"></p>
+            </section>
+
+            <section id="call-page-2" class="call-page" hidden>
+                <p class="call-progress">Step 2 of 2</p>
+
+                <div class="call-field">
+                    <span class="label">Which ISOs does your desk trade?</span>
+                    <div class="call-choices">
+                        <label class="call-choice"><input type="checkbox" name="isos" value="PJM"> PJM</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="ERCOT"> ERCOT</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="CAISO"> CAISO</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="ISO-NE"> ISO-NE</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="MISO"> MISO</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="NYISO"> NYISO</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="SPP"> SPP</label>
+                        <label class="call-choice"><input type="checkbox" name="isos" value="Other"> Other</label>
+                    </div>
+                </div>
+
+                <div class="call-field">
+                    <span class="label">What does your desk trade?</span>
+                    <div class="call-choices">
+                        <label class="call-choice"><input type="radio" name="trade_types" value="Day-ahead spot"> Day-ahead spot</label>
+                        <label class="call-choice"><input type="radio" name="trade_types" value="Real-time spot"> Real-time spot</label>
+                        <label class="call-choice"><input type="radio" name="trade_types" value="Futures"> Futures</label>
+                        <label class="call-choice"><input type="radio" name="trade_types" value="FTR / congestion"> FTR / congestion</label>
+                        <label class="call-choice"><input type="radio" name="trade_types" value="Long-term portfolio"> Long-term portfolio</label>
+                        <label class="call-choice"><input type="radio" name="trade_types" value="Other"> Other</label>
+                    </div>
+                </div>
+
+                <div class="call-field">
+                    <span class="label">How does weather data get to your desk today?</span>
+                    <div class="call-choices">
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="NWS / NOAA"> NWS / NOAA public feeds</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="DTN"> DTN / Frontier Weather</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="CWG"> Commodity Weather Group</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Tomorrow.io"> Tomorrow.io / Climavision</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="AccuWeather"> AccuWeather</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Internal met team"> Internal meteorology team</label>
+                        <label class="call-choice"><input type="checkbox" name="weather_stack" value="Other"> Other</label>
+                    </div>
+                </div>
+
+                <label class="call-field">
+                    <span class="label">LinkedIn <span style="color: var(--call-text-faint); font-weight: 400;">(optional)</span></span>
+                    <input type="url" name="linkedin" placeholder="linkedin.com/in/..." maxlength="500" autocapitalize="none" autocorrect="off" spellcheck="false">
+                </label>
+
+                <label class="call-eoi">
+                    <input type="checkbox" name="eoi" required>
+                    <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
+                </label>
+
+                <div class="call-hp" aria-hidden="true">
+                    <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+                </div>
+
+                <button type="submit" class="call-btn">Book my call &rarr;</button>
+                <button type="button" class="call-btn call-btn-secondary" data-back>&larr; Back</button>
+                <p class="call-error" data-error="2"></p>
+            </section>
+        </form>
+    </div>
+
+    <script src="tracker.js" defer></script>
+    <script>
+        (function () {
+            const CALENDLY_BASE = 'https://calendly.com/akbar-pathan034/intro-call';
+            const form = document.getElementById('call-form');
+            const page1 = document.getElementById('call-page-1');
+            const page2 = document.getElementById('call-page-2');
+            const nextBtn = form.querySelector('[data-next]');
+            const backBtn = form.querySelector('[data-back]');
+            const err1 = form.querySelector('[data-error="1"]');
+            const err2 = form.querySelector('[data-error="2"]');
+
+            function getCookie(name) {
+                const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]+)'));
+                return m ? decodeURIComponent(m[1]) : null;
+            }
+
+            function trackEvent(context) {
+                try {
+                    const visitorId = getCookie('syf_visitor_id');
+                    if (!visitorId) return;
+                    fetch('/api/track-click', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            visitor_id: visitorId,
+                            cta_context: context,
+                            page_path: '/call'
+                        }),
+                        keepalive: true
+                    }).catch(() => {});
+                } catch (_) {}
+            }
+
+            function validatePage1() {
+                const required = ['name', 'email', 'company', 'title'];
+                for (const n of required) {
+                    const input = form.elements[n];
+                    if (!input || !input.value.trim()) {
+                        err1.textContent = 'Please fill in all fields.';
+                        input?.focus();
+                        return false;
+                    }
+                }
+                const emailVal = form.elements.email.value.trim();
+                if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                    err1.textContent = 'Please enter a valid email.';
+                    form.elements.email.focus();
+                    return false;
+                }
+                err1.textContent = '';
+                return true;
+            }
+
+            function validatePage2() {
+                const isos = form.querySelectorAll('input[name="isos"]:checked');
+                if (!isos.length) { err2.textContent = 'Please select at least one ISO.'; return false; }
+                const trade = form.querySelector('input[name="trade_types"]:checked');
+                if (!trade) { err2.textContent = 'Please tell us what your desk trades.'; return false; }
+                const weather = form.querySelectorAll('input[name="weather_stack"]:checked');
+                if (!weather.length) { err2.textContent = 'Please select at least one weather source.'; return false; }
+                if (!form.elements.eoi.checked) { err2.textContent = 'Please confirm your interest to continue.'; return false; }
+                err2.textContent = '';
+                return true;
+            }
+
+            trackEvent('call-page:loaded');
+
+            nextBtn.addEventListener('click', function () {
+                if (!validatePage1()) {
+                    trackEvent('call-page:next-validation-failed');
+                    return;
+                }
+                trackEvent('call-page:advance-to-step-2');
+                page1.hidden = true;
+                page2.hidden = false;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            backBtn.addEventListener('click', function () {
+                trackEvent('call-page:back-to-step-1');
+                page2.hidden = true;
+                page1.hidden = false;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            form.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                if (!validatePage2()) {
+                    trackEvent('call-page:submit-validation-failed');
+                    return;
+                }
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Booking...';
+                trackEvent('call-page:submit-started');
+
+                const fd = new FormData(form);
+                const payload = {
+                    name: (fd.get('name') || '').trim(),
+                    email: (fd.get('email') || '').trim(),
+                    company: (fd.get('company') || '').trim(),
+                    title: (fd.get('title') || '').trim(),
+                    isos: fd.getAll('isos'),
+                    trade_types: fd.getAll('trade_types'),
+                    weather_stack: fd.getAll('weather_stack'),
+                    linkedin: (fd.get('linkedin') || '').trim(),
+                    eoi: !!fd.get('eoi'),
+                    visitor_id: getCookie('syf_visitor_id'),
+                    source: 'call-page',
+                    website: fd.get('website') || ''
+                };
+
+                const params = new URLSearchParams();
+                if (payload.name) params.set('name', payload.name);
+                if (payload.email) params.set('email', payload.email);
+                const fallbackUrl = CALENDLY_BASE + (params.toString() ? '?' + params.toString() : '');
+
+                try {
+                    const res = await fetch('/api/intro-call', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    trackEvent('call-page:submit-completed');
+                    window.location.href = data.redirect || fallbackUrl;
+                } catch (err) {
+                    trackEvent('call-page:submit-network-error');
+                    window.location.href = fallbackUrl;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
