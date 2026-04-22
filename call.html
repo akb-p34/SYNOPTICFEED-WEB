@@ -83,7 +83,7 @@
         }
         .call-field input[type="text"],
         .call-field input[type="email"],
-        .call-field input[type="url"] {
+        .call-field input[type="tel"] {
             width: 100%;
             box-sizing: border-box;
             font-family: inherit;
@@ -360,11 +360,6 @@
                 <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
             </label>
 
-            <label class="call-field">
-                <span class="label">LinkedIn <span style="color: var(--call-text-faint); font-weight: 400;">(optional)</span></span>
-                <input type="url" name="linkedin" placeholder="linkedin.com/in/..." maxlength="500" autocapitalize="none" autocorrect="off" spellcheck="false">
-            </label>
-
             <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
                 <input type="checkbox" name="eoi" required>
                 <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
@@ -487,7 +482,7 @@
 
             // First-focus tracking for inputs
             var focusFired = {};
-            ['name', 'email', 'phone', 'company', 'title', 'linkedin'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company', 'title'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
                 if (!el) return;
                 el.addEventListener('focus', function () {
@@ -496,16 +491,6 @@
                     trackEvent('call:field:focus-' + fieldName);
                 });
             });
-
-            // LinkedIn blur-with-value
-            var linkedinEl = form.elements.linkedin;
-            if (linkedinEl) {
-                linkedinEl.addEventListener('blur', function () {
-                    if ((linkedinEl.value || '').trim()) {
-                        trackEvent('call:field:linkedin-filled');
-                    }
-                });
-            }
 
             // EOI tracking + error clear + autosave on change
             form.addEventListener('change', function (e) {
@@ -551,7 +536,6 @@
 
                 addIfFilled('company', fd.get('company'));
                 addIfFilled('title', fd.get('title'));
-                addIfFilled('linkedin', fd.get('linkedin'));
 
                 // EOI: only send when checked. Never downgrade a consented lead.
                 if (fd.get('eoi')) payload.eoi = true;
@@ -584,7 +568,7 @@
                 } catch (_) {}
             }
 
-            ['name', 'email', 'phone', 'company', 'title', 'linkedin'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company', 'title'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
                 if (el) el.addEventListener('blur', autosave);
             });
@@ -613,7 +597,6 @@
                     phone: (fd.get('phone') || '').trim(),
                     company: (fd.get('company') || '').trim(),
                     title: (fd.get('title') || '').trim(),
-                    linkedin: (fd.get('linkedin') || '').trim(),
                     eoi: !!fd.get('eoi'),
                     isos: [],
                     trade_types: [],
