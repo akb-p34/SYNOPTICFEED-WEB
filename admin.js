@@ -296,7 +296,7 @@
                 renderKpis(data);
                 renderVisitorsChart(data);
                 renderBarChart('pages', 'chart-pages', data.pageviews || [], 'page_path', 'views');
-                renderBarChart('ctas', 'chart-ctas', data.clicks || [], 'cta_context', 'clicks');
+                renderBarChart('ctas', 'chart-ctas', (data.clicks || []).slice(0, 12), 'cta_context', 'clicks');
                 renderVitalsTable(data);
                 renderLeadsTable(data);
                 renderContactsTable(data);
