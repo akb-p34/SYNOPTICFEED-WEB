@@ -199,7 +199,7 @@
             var table = makeEl('table');
             var thead = makeEl('thead');
             var hr = makeEl('tr');
-            ['Stage', 'Name', 'Company', 'Title', 'Email', 'Phone', 'EOI', 'Updated'].forEach(function (h) {
+            ['Stage', 'Name', 'Company', 'Email', 'Phone', 'EOI', 'Updated'].forEach(function (h) {
                 hr.appendChild(makeEl('th', { text: h }));
             });
             thead.appendChild(hr);
@@ -213,7 +213,6 @@
                 var stageTd = makeEl('td'); stageTd.appendChild(stageSpan); tr.appendChild(stageTd);
                 tr.appendChild(makeEl('td', { text: r.name || '' }));
                 tr.appendChild(makeEl('td', { text: r.company || '' }));
-                tr.appendChild(makeEl('td', { cls: 'dim', text: r.title || '' }));
                 tr.appendChild(makeEl('td', { cls: 'mono', text: r.email || '' }));
                 tr.appendChild(makeEl('td', { cls: 'mono', text: r.phone || '' }));
                 tr.appendChild(makeEl('td', { text: r.eoi ? 'yes' : '' }));

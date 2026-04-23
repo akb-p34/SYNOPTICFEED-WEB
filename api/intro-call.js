@@ -97,8 +97,9 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    // Complete stage requires every contact field, a valid phone, and EOI.
-    if (stage === 'complete' && (!name || !company || !title || !phone || !eoi)) {
+    // Complete stage requires name, company, phone, and EOI.
+    // Title is no longer form-required; Akbar enriches from LinkedIn post-submit.
+    if (stage === 'complete' && (!name || !company || !phone || !eoi)) {
         res.status(400).json({ error: 'Invalid input' });
         return;
     }
@@ -109,7 +110,7 @@ module.exports = async function handler(req, res) {
             email,
             name,
             company,
-            title,
+            title: title || null,
             phone,
             linkedin: linkedin || null,
             eoi: true,

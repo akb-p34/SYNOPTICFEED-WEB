@@ -355,11 +355,6 @@
                 <input type="text" name="company" required autocomplete="organization" maxlength="160">
             </label>
 
-            <label class="call-field" data-field="title" data-label="Title / role">
-                <span class="label">Title / role</span>
-                <input type="text" name="title" required autocomplete="organization-title" maxlength="120">
-            </label>
-
             <label class="call-eoi" data-field="eoi" data-label="Confirm interest">
                 <input type="checkbox" name="eoi" required>
                 <span>I'm interested in SynopticFeed's forecast verification for my desk. Non-binding.</span>
@@ -464,7 +459,7 @@
 
             function validateForm() {
                 var failed = [];
-                ['name', 'email', 'phone', 'company', 'title'].forEach(function (n) {
+                ['name', 'email', 'phone', 'company'].forEach(function (n) {
                     var input = form.elements[n];
                     if (!input || !input.value.trim()) failed.push(n);
                 });
@@ -484,7 +479,7 @@
 
             // First-focus tracking for inputs
             var focusFired = {};
-            ['name', 'email', 'phone', 'company', 'title'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
                 if (!el) return;
                 el.addEventListener('focus', function () {
@@ -504,7 +499,7 @@
             });
 
             // Clear field errors on input
-            ['name', 'email', 'phone', 'company', 'title'].forEach(function (n) {
+            ['name', 'email', 'phone', 'company'].forEach(function (n) {
                 var el = form.elements[n];
                 if (el) el.addEventListener('input', function () { setFieldError(n, false); });
             });
@@ -537,7 +532,6 @@
                 }
 
                 addIfFilled('company', fd.get('company'));
-                addIfFilled('title', fd.get('title'));
 
                 // EOI: only send when checked. Never downgrade a consented lead.
                 if (fd.get('eoi')) payload.eoi = true;
@@ -570,7 +564,7 @@
                 } catch (_) {}
             }
 
-            ['name', 'email', 'phone', 'company', 'title'].forEach(function (fieldName) {
+            ['name', 'email', 'phone', 'company'].forEach(function (fieldName) {
                 var el = form.elements[fieldName];
                 if (el) el.addEventListener('blur', autosave);
             });
@@ -578,7 +572,7 @@
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
                 var failed = validateForm();
-                clearAllErrors(err, ['name', 'email', 'phone', 'company', 'title', 'eoi']);
+                clearAllErrors(err, ['name', 'email', 'phone', 'company', 'eoi']);
                 if (failed.length) {
                     renderErrors(err, failed);
                     trackEvent('call-page:submit-validation-failed');
@@ -598,7 +592,6 @@
                     email: (fd.get('email') || '').trim(),
                     phone: (fd.get('phone') || '').trim(),
                     company: (fd.get('company') || '').trim(),
-                    title: (fd.get('title') || '').trim(),
                     eoi: !!fd.get('eoi'),
                     isos: [],
                     trade_types: [],
