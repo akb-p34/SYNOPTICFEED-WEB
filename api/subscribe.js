@@ -1,5 +1,6 @@
 const { getClient } = require('../lib/supabase');
 const { sendWelcome, sendNotification } = require('../lib/resend');
+const { logError } = require('../lib/log-error');
 
 const rateBuckets = new Map();
 const RATE_LIMIT = 5;
@@ -95,6 +96,7 @@ module.exports = async function handler(req, res) {
 
     if (upsertError) {
         console.error('leads upsert error', upsertError);
+        await logError(req, '/api/subscribe', upsertError, 500);
         res.status(500).json({ error: 'Storage failed' });
         return;
     }
@@ -117,8 +119,14 @@ module.exports = async function handler(req, res) {
     // so fire-and-forget sends get killed mid-flight and never reach Resend.
     // Fail-soft on errors so the user still gets a success response.
     await Promise.all([
-        sendWelcome(leadRow).catch(err => console.error('welcome email error', err)),
-        sendNotification(leadRow, context).catch(err => console.error('notify email error', err))
+        sendWelcome(leadRow).catch(async err => {
+            console.error('welcome email error', err);
+            await logError(req, '/api/subscribe:welcome', err, 500);
+        }),
+        sendNotification(leadRow, context).catch(async err => {
+            console.error('notify email error', err);
+            await logError(req, '/api/subscribe:notify', err, 500);
+        })
     ]);
 
     res.status(200).json({ ok: true });

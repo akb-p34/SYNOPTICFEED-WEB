@@ -1,4 +1,5 @@
 const { getClient } = require('../lib/supabase');
+const { logError } = require('../lib/log-error');
 
 function clean(s, max = 200) {
     return s == null ? null : String(s).trim().slice(0, max) || null;
@@ -23,8 +24,13 @@ module.exports = async function handler(req, res) {
         return;
     }
 
-    const sb = getClient();
-    await sb.from('cta_clicks').insert({ visitor_id, cta_context, page_path });
-
-    res.status(200).json({ ok: true });
+    try {
+        const sb = getClient();
+        await sb.from('cta_clicks').insert({ visitor_id, cta_context, page_path });
+        res.status(200).json({ ok: true });
+    } catch (err) {
+        console.error('cta_clicks insert error', err);
+        await logError(req, '/api/track-click', err, 500);
+        res.status(500).json({ error: 'Storage failed' });
+    }
 };

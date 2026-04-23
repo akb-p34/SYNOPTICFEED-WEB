@@ -1,5 +1,6 @@
 const { getClient } = require('../lib/supabase');
 const { sendIntroCallNotification } = require('../lib/resend');
+const { logError } = require('../lib/log-error');
 
 const CALENDLY_BASE = 'https://calendly.com/akbar-pathan034/intro-call';
 
@@ -165,9 +166,13 @@ module.exports = async function handler(req, res) {
             const { error: upsertError } = await sb
                 .from('intro_call_requests')
                 .upsert(entry, { onConflict: 'email' });
-            if (upsertError) console.error('intro_call_requests partial upsert error', upsertError);
+            if (upsertError) {
+                console.error('intro_call_requests partial upsert error', upsertError);
+                await logError(req, '/api/intro-call', upsertError, 500);
+            }
         } catch (err) {
             console.error('intro_call_requests partial storage error', err);
+            await logError(req, '/api/intro-call', err, 500);
         }
         res.status(200).json({ ok: true });
         return;
@@ -182,15 +187,20 @@ module.exports = async function handler(req, res) {
         const { error: upsertError } = await sb
             .from('intro_call_requests')
             .upsert(entry, { onConflict: 'email' });
-        if (upsertError) console.error('intro_call_requests upsert error', upsertError);
+        if (upsertError) {
+            console.error('intro_call_requests upsert error', upsertError);
+            await logError(req, '/api/intro-call', upsertError, 500);
+        }
     } catch (err) {
         console.error('intro_call_requests storage error', err);
+        await logError(req, '/api/intro-call', err, 500);
     }
 
     try {
         await sendIntroCallNotification(entry);
     } catch (err) {
         console.error('intro-call notification error', err);
+        await logError(req, '/api/intro-call:notify', err, 500);
     }
 
     res.status(200).json({ ok: true, redirect });

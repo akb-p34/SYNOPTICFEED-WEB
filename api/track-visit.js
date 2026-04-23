@@ -1,4 +1,5 @@
 const { getClient } = require('../lib/supabase');
+const { logError } = require('../lib/log-error');
 
 function clean(s, max = 500) {
     return s == null ? null : String(s).trim().slice(0, max) || null;
@@ -29,36 +30,42 @@ module.exports = async function handler(req, res) {
     const user_agent = clean(req.headers['user-agent'], 500);
     const country = clean(req.headers['x-vercel-ip-country'], 4);
 
-    const sb = getClient();
+    try {
+        const sb = getClient();
 
-    // Upsert visitor: insert on first hit, update last_seen_at otherwise. first_* fields set only on insert.
-    const { data: existing } = await sb
-        .from('visitors')
-        .select('visitor_id')
-        .eq('visitor_id', visitor_id)
-        .maybeSingle();
+        // Upsert visitor: insert on first hit, update last_seen_at otherwise. first_* fields set only on insert.
+        const { data: existing } = await sb
+            .from('visitors')
+            .select('visitor_id')
+            .eq('visitor_id', visitor_id)
+            .maybeSingle();
 
-    if (existing) {
-        await sb.from('visitors')
-            .update({ last_seen_at: new Date().toISOString() })
-            .eq('visitor_id', visitor_id);
-    } else {
-        await sb.from('visitors').insert({
+        if (existing) {
+            await sb.from('visitors')
+                .update({ last_seen_at: new Date().toISOString() })
+                .eq('visitor_id', visitor_id);
+        } else {
+            await sb.from('visitors').insert({
+                visitor_id,
+                first_referrer: referrer,
+                first_utm_source: utm_source,
+                first_utm_medium: utm_medium,
+                first_utm_campaign: utm_campaign,
+                user_agent,
+                country
+            });
+        }
+
+        await sb.from('page_views').insert({
             visitor_id,
-            first_referrer: referrer,
-            first_utm_source: utm_source,
-            first_utm_medium: utm_medium,
-            first_utm_campaign: utm_campaign,
-            user_agent,
-            country
+            page_path,
+            referrer
         });
+
+        res.status(200).json({ ok: true });
+    } catch (err) {
+        console.error('track-visit error', err);
+        await logError(req, '/api/track-visit', err, 500);
+        res.status(500).json({ error: 'Storage failed' });
     }
-
-    await sb.from('page_views').insert({
-        visitor_id,
-        page_path,
-        referrer
-    });
-
-    res.status(200).json({ ok: true });
 };
